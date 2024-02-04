@@ -1,1 +1,1 @@
-# dp-tokenization
+Code for experiments on shortest tokenizations. 
