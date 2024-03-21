@@ -22,7 +22,7 @@ if __name__ == '__main__':
     steps = OrderedDict()
     steps['download_datasets'] = SingletonStep(step_download_datasets, {
         'version': '001'
-    }, cache_location)
+    })
     # steps['download_s2orc_corpus'] = SingletonStep(download_s2orc_corpus, {
     #     'version': '001'
     # }, cache_location)
