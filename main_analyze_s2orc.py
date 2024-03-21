@@ -20,8 +20,9 @@ def step_download_datasets(**kwargs):
     return True # necessary so it doesn't keep downloading the dataset
 
 def step_download_olmo_model(**kwargs):
-    olmo = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-2-7b", cache_dir=SCRATCH_DIR)
-    tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b", cache_dir=SCRATCH_DIR)
+    access_token = os.getenv("HF_ACCESS_TOKEN")
+    model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-2-7b", cache_dir=SCRATCH_DIR, token=access_token)
+    tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b", cache_dir=SCRATCH_DIR, token=access_token)
     return True
 
 def step_iterate_dataset(**kwargs):
