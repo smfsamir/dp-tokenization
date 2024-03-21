@@ -30,6 +30,9 @@ if __name__ == '__main__':
     steps['download_datasets'] = SingletonStep(step_download_datasets, {
         'version': '001'
     })
+    steps['step_iterate_dataset'] = SingletonStep(step_iterate_dataset, {
+        'version': '001'
+    })
     # steps['download_s2orc_corpus'] = SingletonStep(download_s2orc_corpus, {
     #     'version': '001'
     # }, cache_location)
