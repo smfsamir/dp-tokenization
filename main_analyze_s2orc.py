@@ -14,7 +14,7 @@ load_dotenv()
 
 def step_download_datasets(**kwargs): 
     # NOTE: might have to update this path if the snapshot changes
-    snapshot_download(repo_id = "leminda-ai/s2orc_small", cache_dir=SCRATCH_DIR)
+    snapshot_download(repo_id = "leminda-ai/s2orc_small", repo_type="dataset", cache_dir=SCRATCH_DIR)
     return True # necessary so it doesn't keep downloading the dataset
 
 if __name__ == '__main__':
