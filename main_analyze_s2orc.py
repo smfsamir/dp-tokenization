@@ -14,15 +14,16 @@ load_dotenv()
 
 def step_download_datasets(**kwargs): 
     # NOTE: might have to update this path if the snapshot changes
-    os.makedirs(f"{SCRATCH_DIR}/tokenization", exist_ok=True)
-    snapshot_download(repo_id = "leminda-ai/s2orc_small", cache_dir=f"{SCRATCH_DIR}/tokenization")
+    snapshot_download(repo_id = "leminda-ai/s2orc_small", cache_dir=SCRATCH_DIR)
     return True # necessary so it doesn't keep downloading the dataset
-
-def download_s2orc_corpus():
-    return True
 
 if __name__ == '__main__':
     cache_location = os.getenv("CACHE_DIR")
     steps = OrderedDict()
-    cache_dir = SCRATCH_DIR + 'tokenization'
-    conduct(cache_dir, steps, '')
+    steps['download_datasets'] = SingletonStep(step_download_datasets, {
+        'version': '001'
+    }, cache_location)
+    # steps['download_s2orc_corpus'] = SingletonStep(download_s2orc_corpus, {
+    #     'version': '001'
+    # }, cache_location)
+    conduct(os.path.join(SCRATCH_DIR, "tokenization_cache"), steps, "tokenization_logs")
