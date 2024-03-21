@@ -21,9 +21,7 @@ def step_download_datasets(**kwargs):
 
 def step_iterate_dataset(**kwargs):
     # load the dataset
-    dataset = load_dataset(path=os.path.join(SCRATCH_DIR, "datasets--leminda-ai--s2orc_small", 
-                                             "snapshots", "6920172fe611a81f0a91e437a13c290a1ac114e7", 
-                                             "data"))
+    dataset = load_dataset("leminda-ai/s2orc_small", cache_dir=SCRATCH_DIR)
     ipdb.set_trace()
 
 if __name__ == '__main__':
