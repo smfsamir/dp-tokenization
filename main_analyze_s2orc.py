@@ -45,7 +45,6 @@ def step_finetune_llama(**kwargs):
         per_device_eval_batch_size=32,
         num_train_epochs=2,
         weight_decay=0.01,
-        torch_dtype='bfloat16',
         evaluation_strategy="epoch",
         save_strategy="epoch",
         load_best_model_at_end=True,
