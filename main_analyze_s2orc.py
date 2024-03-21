@@ -50,6 +50,7 @@ def step_finetune_llama(**kwargs):
         save_strategy="epoch",
         load_best_model_at_end=True,
     )
+    ipdb.set_trace()
     trainer = Trainer(
         model=model,
         args=training_args,
@@ -72,6 +73,9 @@ if __name__ == '__main__':
         'version': '001'
     })
     steps['step_iterate_dataset'] = SingletonStep(step_iterate_dataset, {
+        'version': '001'
+    })
+    steps['step_finetune_llama'] = SingletonStep(step_finetune_llama, {
         'version': '001'
     })
     # steps['download_s2orc_corpus'] = SingletonStep(download_s2orc_corpus, {
