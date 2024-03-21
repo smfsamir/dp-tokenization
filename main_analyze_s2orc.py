@@ -1,6 +1,6 @@
 import ipdb
 import os
-from transformers import AutoTokenizer, WhisperTokenizer
+from transformers import AutoTokenizer, WhisperTokenizer, AutoModelForCausalLM
 from flowmason import SingletonStep, MapReduceStep
 from dotenv import load_dotenv
 from collections import OrderedDict
@@ -19,6 +19,11 @@ def step_download_datasets(**kwargs):
     snapshot_download(repo_id = "leminda-ai/s2orc_small", repo_type="dataset", cache_dir=SCRATCH_DIR)
     return True # necessary so it doesn't keep downloading the dataset
 
+def step_download_olmo_model(**kwargs):
+    olmo = AutoModelForCausalLM.from_pretrained("allenai/OLMo-1B", cache_dir=SCRATCH_DIR)
+    tokenizer = AutoTokenizer.from_pretrained("allenai/OLMo-1B", cache_dir=SCRATCH_DIR)
+    return True
+
 def step_iterate_dataset(**kwargs):
     # load the dataset
     dataset = load_dataset("leminda-ai/s2orc_small", cache_dir=SCRATCH_DIR)
@@ -28,6 +33,9 @@ if __name__ == '__main__':
     cache_location = os.getenv("CACHE_DIR")
     steps = OrderedDict()
     steps['download_datasets'] = SingletonStep(step_download_datasets, {
+        'version': '001'
+    })
+    steps['step_download_olmo_model'] = SingletonStep(step_download_olmo_model, {
         'version': '001'
     })
     steps['step_iterate_dataset'] = SingletonStep(step_iterate_dataset, {
