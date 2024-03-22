@@ -1,7 +1,8 @@
 import ipdb
 import os
-from transformers import AutoTokenizer, WhisperTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
+from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
 from flowmason import SingletonStep, MapReduceStep
+from peft import LoraConfig, TaskType, get_peft_model
 from dotenv import load_dotenv
 from collections import OrderedDict
 from huggingface_hub import snapshot_download, login
@@ -60,13 +61,15 @@ def step_iterate_dataset(**kwargs):
 def step_finetune_llama(**kwargs):
     # load the first 10 percent as eval dataset
     compute_dtype = getattr(torch, "float16")
-    quant_config = BitsAndBytesConfig(
-        load_in_4bit=True,
-        bnb_4bit_quant_type="nf4",
-        bnb_4bit_compute_dtype=compute_dtype,
-        bnb_4bit_use_double_quant=False,
-    )
+    # quant_config = BitsAndBytesConfig(
+    #     load_in_4bit=True,
+    #     bnb_4bit_quant_type="nf4",
+    #     bnb_4bit_compute_dtype=compute_dtype,
+    #     bnb_4bit_use_double_quant=False,
+    # )
     model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir=SCRATCH_DIR)
+    peft_config = LoraConfig(task_type = TaskType.CAUSAL_LM, inference_mode=False, r=8, lora_alpha=32, lora_dropout=0.1)
+    model = get_peft_model(model, peft_config)
     tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir=SCRATCH_DIR)
     eval_dataset = load_dataset("leminda-ai/s2orc_small", split='train[:10%]', cache_dir=SCRATCH_DIR)
     train_dataset = load_dataset("leminda-ai/s2orc_small", split='train[10%:]', cache_dir=SCRATCH_DIR)
