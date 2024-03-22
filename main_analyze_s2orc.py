@@ -100,7 +100,7 @@ def step_finetune_llama(**kwargs):
                                                                 num_labels=num_fields, 
                                                                 id2label=id2label,
                                                                 label2id=label2id)
-    peft_config = LoraConfig(task_type = TaskType., inference_mode=False, r=8, lora_alpha=32, lora_dropout=0.1)
+    peft_config = LoraConfig(task_type = TaskType.SEQ_CLS, inference_mode=False, r=8, lora_alpha=32, lora_dropout=0.1)
     model = get_peft_model(model, peft_config)
     tokenizer.padding_side = "right"
 
