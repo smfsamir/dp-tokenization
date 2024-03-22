@@ -65,7 +65,7 @@ def step_finetune_llama(**kwargs):
         bnb_4bit_compute_dtype=compute_dtype,
         bnb_4bit_use_double_quant=False,
     )
-    model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir=SCRATCH_DIR, quantization_config=quant_config)
+    model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir=SCRATCH_DIR, quantization_config=quant_config, torch_dtype=compute_dtype)
     peft_config = LoraConfig(task_type = TaskType.CAUSAL_LM, inference_mode=False, r=8, lora_alpha=32, lora_dropout=0.1)
     model = get_peft_model(model, peft_config)
     tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir=SCRATCH_DIR)
