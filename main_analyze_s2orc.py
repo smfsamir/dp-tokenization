@@ -88,7 +88,7 @@ def step_finetune_llama(**kwargs):
     logger.info("Loading the dataset")
     eval_dataset = load_dataset("leminda-ai/s2orc_small", split='train[:10%]', cache_dir=SCRATCH_DIR).filter(lambda x: len(x['fieldsOfStudy']) == 1)
     logger.info(f"Loaded evaluation dataset; {len(eval_dataset)} examples")
-    train_dataset = load_dataset("leminda-ai/s2orc_small", split='train[10%:]', cache_dir=SCRATCH_DIR).filter(lambda x: len(x['fieldsOfStudy']) == 1)
+    train_dataset = load_dataset("leminda-ai/s2orc_small", split='train[10%:30%]', cache_dir=SCRATCH_DIR).filter(lambda x: len(x['fieldsOfStudy']) == 1)
     logger.info(f"Loaded training dataset; {len(train_dataset)} examples")
     # preprocess the dataset by tokenizing the text
 
@@ -99,6 +99,7 @@ def step_finetune_llama(**kwargs):
     print(f"The unique fields are {unique_fields}")
     llama_preprocess = llama_preprocessing_function(tokenizer, label2id)
     eval_dataset = eval_dataset.map(llama_preprocess)
+    train_dataset = train_dataset.map(llama_preprocess)
     logger.info("Loading the model")
     model = AutoModelForSequenceClassification.from_pretrained("meta-llama/Llama-2-7b-hf", 
                                                                cache_dir=SCRATCH_DIR, 
