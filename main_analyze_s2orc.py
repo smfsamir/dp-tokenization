@@ -1,7 +1,7 @@
 from functools import partial
 import ipdb
 import os
-from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig, AutoModelForSequenceClassification
+from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig, AutoModelForSequenceClassification, DataCollatorWithPadding
 from flowmason import SingletonStep, MapReduceStep
 from peft import LoraConfig, TaskType, get_peft_model
 from dotenv import load_dotenv
@@ -80,30 +80,37 @@ def step_finetune_llama(**kwargs):
     # model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir=SCRATCH_DIR, quantization_config=quant_config, torch_dtype=compute_dtype)
     ipdb.set_trace()
     tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir=SCRATCH_DIR)
-    tokenizer.pad_token = "[PAD]"
+    tokenizer.pad_token_id = tokenizer.eos_token_id
+    tokenizer.pad_token = tokenizer.eos_token
+    # tokenizer.pad_token = "[PAD]"
 
     eval_dataset = load_dataset("leminda-ai/s2orc_small", split='train[:10%]', cache_dir=SCRATCH_DIR).filter(lambda x: len(x['fieldsOfStudy']) == 1)
     train_dataset = load_dataset("leminda-ai/s2orc_small", split='train[10%:]', cache_dir=SCRATCH_DIR).filter(lambda x: len(x['fieldsOfStudy']) == 1)
-    llama_preprocess = llama_preprocessing_function(tokenizer)
     # preprocess the dataset by tokenizing the text
-    eval_dataset = eval_dataset.map(llama_preprocess)
 
     unique_fields = list(set([field for example in eval_dataset for field in example['fieldsOfStudy']]))
-    id2label = {i: field for i, field in enumerate(unique_fields)}
+    num_fields = len(unique_fields)
+    # id2label = {i: field for i, field in enumerate(unique_fields)}
     label2id = {field: i for i, field in enumerate(unique_fields)}
     print(f"The unique fields are {unique_fields}")
-    num_fields = len(unique_fields)
+    llama_preprocess = llama_preprocessing_function(tokenizer, label2id)
+    eval_dataset = eval_dataset.map(llama_preprocess)
     model = AutoModelForSequenceClassification.from_pretrained("meta-llama/Llama-2-7b-hf", 
                                                                cache_dir=SCRATCH_DIR, 
                                                                quantization_config=quant_config, 
                                                                torch_dtype=compute_dtype, 
-                                                                num_labels=num_fields, 
-                                                                id2label=id2label,
-                                                                label2id=label2id)
-    peft_config = LoraConfig(task_type = TaskType.SEQ_CLS, inference_mode=False, r=8, lora_alpha=32, lora_dropout=0.1)
+                                                                num_labels=num_fields 
+                                                                )
+    model.config.pad_token_id = model.config.eos_token_id
+    peft_config = LoraConfig(task_type = TaskType.SEQ_CLS, inference_mode=False, r=16, lora_alpha=16, lora_dropout=0.05, bias="none", 
+                             target_modules=[
+                                    "q_proj",
+                                    "v_proj",  
+                                ],
+                            )
     model = get_peft_model(model, peft_config)
-    tokenizer.padding_side = "right"
-
+    llama_data_collator = DataCollatorWithPadding(tokenizer=tokenizer)
+    # tokenizer.padding_side = "right"
 
     training_args = TrainingArguments(
         output_dir=f"{SCRATCH_DIR}/llama_7b_hf_finetuned_lora",
@@ -116,6 +123,7 @@ def step_finetune_llama(**kwargs):
         weight_decay=0.01,
         logging_steps=25,
         max_steps=100,
+        max_grad_norm=0.3,
         evaluation_strategy="epoch",
         save_strategy="epoch",
         load_best_model_at_end=True,
@@ -127,7 +135,7 @@ def step_finetune_llama(**kwargs):
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
         tokenizer=tokenizer,
-        data_collator=collator
+        data_collator=llama_data_collator
     )
     trainer.train()
 
