@@ -88,7 +88,7 @@ def step_finetune_llama(**kwargs):
     # preprocess the dataset by tokenizing the text
     eval_dataset = eval_dataset.map(llama_preprocess)
 
-    unique_fields = list(set([field for example in eval_dataset for field in example['fieldsOfStudy']])))
+    unique_fields = list(set([field for example in eval_dataset for field in example['fieldsOfStudy']]))
     id2label = {i: field for i, field in enumerate(unique_fields)}
     label2id = {field: i for i, field in enumerate(unique_fields)}
     print(f"The unique fields are {unique_fields}")
