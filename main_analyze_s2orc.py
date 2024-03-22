@@ -68,6 +68,7 @@ def step_finetune_llama(**kwargs):
         evaluation_strategy="epoch",
         save_strategy="epoch",
         load_best_model_at_end=True,
+        remove_unused_columns=False
     )
     ipdb.set_trace()
     trainer = Trainer(
