@@ -4,7 +4,7 @@ from functools import partial
 import ipdb
 import os
 from peft import AutoPeftModelForSequenceClassification
-from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig, AutoModelForSequenceClassification, DataCollatorWithPadding, AutoP
+from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig, AutoModelForSequenceClassification, DataCollatorWithPadding 
 import evaluate
 from flowmason import SingletonStep, MapReduceStep
 from peft import LoraConfig, TaskType, get_peft_model
