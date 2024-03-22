@@ -115,6 +115,7 @@ def step_finetune_llama(**kwargs):
     logger.info(f"Loaded training dataset; {len(train_dataset)} examples")
     # preprocess the dataset by tokenizing the text
 
+    ipdb.set_trace()
     unique_fields = list(set([field for example in eval_dataset for field in example['fieldsOfStudy']]))
     num_fields = len(unique_fields)
     # id2label = {i: field for i, field in enumerate(unique_fields)}
