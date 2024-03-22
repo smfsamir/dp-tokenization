@@ -1,3 +1,4 @@
+from functools import partial
 import ipdb
 import os
 from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig, AutoModelForSequenceClassification
@@ -19,25 +20,26 @@ from packages.constants import SCRATCH_DIR
 load_dotenv()
 
 
-@dataclass
-class DataCollatorCustomTokenization:
-    tokenizer: AutoTokenizer
+# @dataclass
+# class DataCollatorCustomTokenization:
+#     tokenizer: AutoTokenizer
+#     label2id: Dict[str, int]
 
-    # def __call__(self, features: List[Dict[str, Union[List[int], torch.Tensor]]]) -> Dict[str, torch.Tensor]:
-    def __call__(self, input_batch: Dict[str, str]) -> Dict[str, torch.Tensor]:
-        snippets = [input_batch[i]['paperAbstract'] for i in range(len(input_batch))]
+#     # def __call__(self, features: List[Dict[str, Union[List[int], torch.Tensor]]]) -> Dict[str, torch.Tensor]:
+#     def __call__(self, input_batch: Dict[str, str]) -> Dict[str, torch.Tensor]:
+#         snippets = [input_batch[i]['paperAbstract'] for i in range(len(input_batch))]
 
-        # topics = [' '.join(batch[i]['fieldsOfStudy']) for i in range(len(batch))]
-        # write as a for loop for now
-        topics = []
-        for i in range(len(input_batch)):
-            topics.append(', '.join(input_batch[i]['fieldsOfStudy']))
+#         # topics = [' '.join(batch[i]['fieldsOfStudy']) for i in range(len(batch))]
+#         # write as a for loop for now
+#         topics = []
+#         for i in range(len(input_batch)):
+#             topics.append(', '.join(input_batch[i]['fieldsOfStudy']))
         
-        # combine the snippets and topics with a colon
-        complete_sentences = [f"{snippets[i]}: {topics[i]}" for i in range(len(snippets))]
-        output_batch = self.tokenizer(complete_sentences, truncation=True, padding=True, max_length=2048, return_tensors="pt")
-        output_batch["labels"] = output_batch["input_ids"].clone().masked_fill(output_batch.attention_mask.ne(1), -100)
-        return output_batch
+#         # combine the snippets and topics with a colon
+#         complete_sentences = [f"{snippets[i]}: {topics[i]}" for i in range(len(snippets))]
+#         output_batch = self.tokenizer(complete_sentences, truncation=True, padding=True, max_length=2048, return_tensors="pt")
+#         output_batch["labels"] = output_batch["input_ids"].clone().masked_fill(output_batch.attention_mask.ne(1), -100)
+#         return output_batch
 
 
 def step_download_datasets(**kwargs): 
@@ -50,6 +52,12 @@ def step_download_olmo_model(**kwargs):
     model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir=SCRATCH_DIR, token=access_token)
     tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir=SCRATCH_DIR, token=access_token)
     return True
+
+
+def llama_preprocessing_function(llama_tokenizer):
+    def _tokenize(example):
+        return llama_tokenizer(example['paperAbstract'], truncation=True, max_length=2048)
+    return _tokenize
 
 def step_iterate_dataset(**kwargs):
     # load the dataset
@@ -67,19 +75,31 @@ def step_finetune_llama(**kwargs):
     )
     # model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir=SCRATCH_DIR, quantization_config=quant_config, torch_dtype=compute_dtype)
     ipdb.set_trace()
+    tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir=SCRATCH_DIR)
+    tokenizer.pad_token = "[PAD]"
+
+    eval_dataset = load_dataset("leminda-ai/s2orc_small", split='train[:10%]', cache_dir=SCRATCH_DIR).filter(lambda x: len(x['fieldsOfStudy']) == 1)
+    train_dataset = load_dataset("leminda-ai/s2orc_small", split='train[10%:]', cache_dir=SCRATCH_DIR).filter(lambda x: len(x['fieldsOfStudy']) == 1)
+    llama_preprocess = llama_preprocessing_function(tokenizer)
+    # preprocess the dataset by tokenizing the text
+    eval_dataset = eval_dataset.map(llama_preprocess, batched=True)
+
+    unique_fields = list(set([field for example in eval_dataset for field in example['fieldsOfStudy']])))
+    id2label = {i: field for i, field in enumerate(unique_fields)}
+    label2id = {field: i for i, field in enumerate(unique_fields)}
+    print(f"The unique fields are {unique_fields}")
+    num_fields = len(unique_fields)
     model = AutoModelForSequenceClassification.from_pretrained("meta-llama/Llama-2-7b-hf", 
                                                                cache_dir=SCRATCH_DIR, 
                                                                quantization_config=quant_config, 
                                                                torch_dtype=compute_dtype, 
-                                                               )
-    peft_config = LoraConfig(task_type = TaskType.CAUSAL_LM, inference_mode=False, r=8, lora_alpha=32, lora_dropout=0.1)
+                                                                num_labels=num_fields, 
+                                                                id2label=id2label,
+                                                                label2id=label2id)
+    peft_config = LoraConfig(task_type = TaskType., inference_mode=False, r=8, lora_alpha=32, lora_dropout=0.1)
     model = get_peft_model(model, peft_config)
-    tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir=SCRATCH_DIR)
-    tokenizer.pad_token = "[PAD]"
     tokenizer.padding_side = "right"
 
-    eval_dataset = load_dataset("leminda-ai/s2orc_small", split='train[:10%]', cache_dir=SCRATCH_DIR)
-    train_dataset = load_dataset("leminda-ai/s2orc_small", split='train[10%:]', cache_dir=SCRATCH_DIR)
     collator = DataCollatorCustomTokenization(tokenizer)
 
     training_args = TrainingArguments(
