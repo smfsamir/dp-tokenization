@@ -186,6 +186,7 @@ def step_load_trained_model(trained_checkpoint_path, **kwargs):
     outputs = model(**inputs)
     logits = outputs.logits
     prediction = torch.argmax(logits, dim=-1)
+    ,
     # tokenizer = AutoTokenizer.from_pretrained(trained_checkpoint_path)
     pass
 
@@ -202,12 +203,13 @@ if __name__ == '__main__':
     steps['step_iterate_dataset'] = SingletonStep(step_iterate_dataset, {
         'version': '001'
     })
-    steps['step_finetune_llama'] = SingletonStep(step_finetune_llama, {
-        'version': '001'
-    })
+    # steps['step_finetune_llama'] = SingletonStep(step_finetune_llama, {
+    #     'version': '001'
+    # })
     steps['step_inspect_finedtuned_llama'] = SingletonStep(step_load_trained_model,
     {
-        'version': '001'
+        'version': '001', 
+        'trained_checkpoint_path': f"{SCRATCH_DIR}/llama_7b_hf_finetuned_lora"
     })
     # steps['download_s2orc_corpus'] = SingletonStep(download_s2orc_corpus, {
     #     'version': '001'
