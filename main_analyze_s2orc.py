@@ -85,6 +85,7 @@ def compute_metrics(eval_pred):
     recall = recall_metric.compute(predictions=predictions, references=labels)["recall"]
     f1 = f1_metric.compute(predictions=predictions, references=labels)["f1"]
     accuracy = accuracy_metric.compute(predictions=predictions, references=labels)["accuracy"]
+    ipdb.set_trace()
     # The trainer is expecting a dictionary where the keys are the metrics names and the values are the scores. 
     return {"precision": precision, "recall": recall, "f1-score": f1, 'accuracy': accuracy}
 
