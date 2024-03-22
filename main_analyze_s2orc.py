@@ -31,14 +31,12 @@ class DataCollatorCustomTokenization:
         # write as a for loop for now
         topics = []
         for i in range(len(input_batch)):
-            topics.append(' '.join(input_batch[i]['fieldsOfStudy']))
-
-        output_batch = self.tokenizer(snippets, truncation=True, padding=True, max_length=2048, return_tensors="pt")
-
-        labels = self.tokenizer(topics, truncation=True, padding=True, max_length=2048, return_tensors="pt")
-        labels = labels["input_ids"].masked_fill(labels.attention_mask.ne(1), -100)
-
-        output_batch["labels"] = labels
+            topics.append(', '.join(input_batch[i]['fieldsOfStudy']))
+        
+        # combine the snippets and topics with a colon
+        complete_sentences = [f"{snippets[i]}: {topics[i]}" for i in range(len(snippets))]
+        output_batch = self.tokenizer(complete_sentences, truncation=True, padding=True, max_length=2048, return_tensors="pt")
+        output_batch["labels"] = output_batch["input_ids"].clone().masked_fill(output_batch.attention_mask.ne(1), -100)
         return output_batch
 
 
