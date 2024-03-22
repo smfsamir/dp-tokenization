@@ -25,7 +25,12 @@ class DataCollatorCustomTokenization:
     # def __call__(self, features: List[Dict[str, Union[List[int], torch.Tensor]]]) -> Dict[str, torch.Tensor]:
     def __call__(self, batch: Dict[str, str]) -> Dict[str, torch.Tensor]:
         snippets = [batch[i]['paperAbstract'] for i in range(len(batch))]
-        topics = [' '.join(batch[i]['fieldsOfStudy']) for i in range(len(batch))]
+
+        # topics = [' '.join(batch[i]['fieldsOfStudy']) for i in range(len(batch))]
+        # write as a for loop for now
+        topics = []
+        for i in range(len(batch)):
+            topics.append(' '.join(batch[i]['fieldsOfStudy']))
 
         batch = self.tokenizer(snippets, truncation=True, padding=True, max_length=2048, return_tensors="pt")
 
@@ -75,7 +80,6 @@ def step_finetune_llama(**kwargs):
         load_best_model_at_end=True,
         remove_unused_columns=False
     )
-    ipdb.set_trace()
     trainer = Trainer(
         model=model,
         args=training_args,
