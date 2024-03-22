@@ -60,6 +60,7 @@ def step_download_olmo_model(**kwargs):
 def llama_preprocessing_function(llama_tokenizer, label_2_id):
     label_column = "fieldsOfStudy"
     def _tokenize(example):
+        ipdb.set_trace()
         tokenized_dict = llama_tokenizer(example['paperAbstract'], truncation=True, max_length=2048)
         tokenized_dict['label'] = label_2_id[example[label_column][0]]
         return tokenized_dict
@@ -86,8 +87,12 @@ def step_finetune_llama(**kwargs):
     # tokenizer.pad_token = "[PAD]"
 
     logger.info("Loading the dataset")
+    remove_columns =  ['id', 'title', 'paperAbstract', 'entities', 's2Url', 'pdfUrls', 's2PdfUrl', 'authors', 
+                       'inCitations', 'outCitations', 'fieldsOfStudy', 'year', 'venue', 
+                       'journalName', 'journalVolume', 'journalPages', 'sources', 
+                       'doi', 'doiUrl', 'pmid', 'magId']
     eval_dataset = load_dataset("leminda-ai/s2orc_small", split='train[:5%]', cache_dir=SCRATCH_DIR).filter(lambda x: len(x['fieldsOfStudy']) == 1)
-    ipdb.set_trace()
+
     logger.info(f"Loaded evaluation dataset; {len(eval_dataset)} examples")
     train_dataset = load_dataset("leminda-ai/s2orc_small", split='train[5%:10%]', cache_dir=SCRATCH_DIR).filter(lambda x: len(x['fieldsOfStudy']) == 1)
     logger.info(f"Loaded training dataset; {len(train_dataset)} examples")
@@ -99,7 +104,7 @@ def step_finetune_llama(**kwargs):
     label2id = {field: i for i, field in enumerate(unique_fields)}
     print(f"The unique fields are {unique_fields}")
     llama_preprocess = llama_preprocessing_function(tokenizer, label2id)
-    eval_dataset = eval_dataset.map(llama_preprocess)
+    eval_dataset = eval_dataset.map(llama_preprocess, batched=True, remove_columns=remove_columns)
     train_dataset = train_dataset.map(llama_preprocess)
     logger.info("Loading the model")
     model = AutoModelForSequenceClassification.from_pretrained("meta-llama/Llama-2-7b-hf", 
