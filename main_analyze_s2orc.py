@@ -186,7 +186,7 @@ def step_load_trained_model(trained_checkpoint_path, **kwargs):
     outputs = model(**inputs)
     logits = outputs.logits
     prediction = torch.argmax(logits, dim=-1)
-    ,
+    ipdb.set_trace()
     # tokenizer = AutoTokenizer.from_pretrained(trained_checkpoint_path)
     pass
 
