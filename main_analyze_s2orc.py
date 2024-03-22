@@ -79,13 +79,12 @@ def compute_metrics(eval_pred):
     f1_metric= evaluate.load("f1")
     accuracy_metric = evaluate.load("accuracy")
 
-    ipdb.set_trace()
     logits, labels = eval_pred # eval_pred is the tuple of predictions and labels returned by the model
     predictions = np.argmax(logits, axis=-1)
-    precision = precision_metric.compute(predictions=predictions, references=labels)["precision"]
-    recall = recall_metric.compute(predictions=predictions, references=labels)["recall"]
-    f1 = f1_metric.compute(predictions=predictions, references=labels)["f1"]
-    accuracy = accuracy_metric.compute(predictions=predictions, references=labels)["accuracy"]
+    precision = precision_metric.compute(predictions=predictions, references=labels, average='macro')["precision"]
+    recall = recall_metric.compute(predictions=predictions, references=labels, average='macro')["recall"]
+    f1 = f1_metric.compute(predictions=predictions, references=labels, average='macro')["f1"]
+    accuracy = accuracy_metric.compute(predictions=predictions, references=labels, average='macro')["accuracy"]
     # The trainer is expecting a dictionary where the keys are the metrics names and the values are the scores. 
     return {"precision": precision, "recall": recall, "f1-score": f1, 'accuracy': accuracy}
 
@@ -116,7 +115,6 @@ def step_finetune_llama(**kwargs):
     logger.info(f"Loaded training dataset; {len(train_dataset)} examples")
     # preprocess the dataset by tokenizing the text
 
-    ipdb.set_trace()
     unique_fields = list(set([field for example in eval_dataset for field in example['fieldsOfStudy']]))
     num_fields = len(unique_fields)
     # id2label = {i: field for i, field in enumerate(unique_fields)}
