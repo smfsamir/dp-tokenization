@@ -58,7 +58,7 @@ def step_iterate_dataset(**kwargs):
 
 def step_finetune_llama(**kwargs):
     # load the first 10 percent as eval dataset
-    compute_dtype = getattr(torch, "float16")
+    compute_dtype = getattr(torch, "bfloat16")
     quant_config = BitsAndBytesConfig(
         load_in_4bit=True,
         bnb_4bit_quant_type="nf4",
