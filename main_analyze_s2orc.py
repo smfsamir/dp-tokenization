@@ -8,12 +8,32 @@ from huggingface_hub import snapshot_download, login
 from flowmason import conduct
 from datasets import load_dataset
 from transformers import TrainingArguments, Trainer, DataCollatorForSeq2Seq
-
+from typing import Dict, Tuple, List
+import torch
+from dataclasses import dataclass
 
 from inspect_tokenizer import compute_shortest_tokenizations
 from packages.constants import SCRATCH_DIR
 
 load_dotenv()
+
+
+@dataclass
+class DataCollatorCustomTokenization:
+    tokenizer: AutoTokenizer
+
+    # def __call__(self, features: List[Dict[str, Union[List[int], torch.Tensor]]]) -> Dict[str, torch.Tensor]:
+    def __call__(self, batch: Dict[str, str]) -> Dict[str, torch.Tensor]:
+        snippets = batch['paperAbstract']
+        topics = batch['fieldOfStudy']
+        ipdb.set_trace()
+
+        batch['input_ids'] = self.tokenizer(snippets, truncation=True, padding=True, max_length=2048, return_tensors="pt")["input_ids"]
+        labels = self.tokenizer(topics, truncation=True, padding=True, max_length=2048, return_tensors="pt")["input_ids"]
+        batch["labels"] = labels
+        return batch
+
+
 
 def step_download_datasets(**kwargs): 
     # NOTE: might have to update this path if the snapshot changes
@@ -28,8 +48,8 @@ def step_download_olmo_model(**kwargs):
 
 def step_iterate_dataset(**kwargs):
     # load the dataset
-
-    ipdb.set_trace()
+    # ipdb.set_trace()
+    pass
 
 def step_finetune_llama(**kwargs):
     # load the first 10 percent as eval dataset
@@ -37,7 +57,7 @@ def step_finetune_llama(**kwargs):
     tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir=SCRATCH_DIR)
     eval_dataset = load_dataset("leminda-ai/s2orc_small", split='train[:10%]', cache_dir=SCRATCH_DIR)
     train_dataset = load_dataset("leminda-ai/s2orc_small", split='train[10%:]', cache_dir=SCRATCH_DIR)
-    collator = DataCollatorForSeq2Seq(tokenizer, model=model)
+    collator = DataCollatorCustomTokenization(tokenizer)
     training_args = TrainingArguments(
         output_dir=f"{SCRATCH_DIR}/llama_7b_hf_finetuned",
         learning_rate=1e-3,
