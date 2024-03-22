@@ -70,11 +70,12 @@ def step_finetune_llama(**kwargs):
 
     training_args = TrainingArguments(
         output_dir=f"{SCRATCH_DIR}/llama_7b_hf_finetuned",
-        learning_rate=1e-3,
+        learning_rate=1e-4,
         per_device_train_batch_size=32,
         per_device_eval_batch_size=32,
         num_train_epochs=2,
         weight_decay=0.01,
+        steps=100,
         evaluation_strategy="epoch",
         save_strategy="epoch",
         load_best_model_at_end=True,
