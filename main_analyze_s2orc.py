@@ -84,7 +84,7 @@ def compute_metrics(eval_pred):
     precision = precision_metric.compute(predictions=predictions, references=labels, average='macro')["precision"]
     recall = recall_metric.compute(predictions=predictions, references=labels, average='macro')["recall"]
     f1 = f1_metric.compute(predictions=predictions, references=labels, average='macro')["f1"]
-    accuracy = accuracy_metric.compute(predictions=predictions, references=labels, average='macro')["accuracy"]
+    accuracy = accuracy_metric.compute(predictions=predictions, references=labels)["accuracy"]
     # The trainer is expecting a dictionary where the keys are the metrics names and the values are the scores. 
     return {"precision": precision, "recall": recall, "f1-score": f1, 'accuracy': accuracy}
 
