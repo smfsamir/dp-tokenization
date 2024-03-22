@@ -34,7 +34,6 @@ class DataCollatorCustomTokenization:
 
         output_batch = self.tokenizer(snippets, truncation=True, padding=True, max_length=2048, return_tensors="pt")
 
-        ipdb.set_trace()
         labels = self.tokenizer(topics, truncation=True, padding=True, max_length=2048, return_tensors="pt")
         labels = labels["input_ids"].masked_fill(labels.attention_mask.ne(1), -100)
 
