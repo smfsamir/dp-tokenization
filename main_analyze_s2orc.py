@@ -3,7 +3,8 @@ import loguru
 from functools import partial
 import ipdb
 import os
-from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig, AutoModelForSequenceClassification, DataCollatorWithPadding
+from peft import AutoPeftModelForSequenceClassification
+from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig, AutoModelForSequenceClassification, DataCollatorWithPadding, AutoP
 import evaluate
 from flowmason import SingletonStep, MapReduceStep
 from peft import LoraConfig, TaskType, get_peft_model
@@ -173,6 +174,11 @@ def step_finetune_llama(**kwargs):
     )
     trainer.train()
 
+def step_load_trained_model(trained_checkpoint_path, **kwargs):
+    model = AutoPeftModelForSequenceClassification.from_pretrained(trained_checkpoint_path)
+    tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir=SCRATCH_DIR)
+    # tokenizer = AutoTokenizer.from_pretrained(trained_checkpoint_path)
+    pass
 
 
 if __name__ == '__main__':
