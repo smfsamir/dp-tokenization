@@ -26,13 +26,15 @@ class DataCollatorCustomTokenization:
     def __call__(self, batch: Dict[str, str]) -> Dict[str, torch.Tensor]:
         snippets = [batch[i]['paperAbstract'] for i in range(len(batch))]
         topics = [batch[i]['fieldsOfStudy'] for i in range(len(batch))]
-        ipdb.set_trace()
 
-        batch['input_ids'] = self.tokenizer(snippets, truncation=True, padding=True, max_length=2048, return_tensors="pt")["input_ids"]
-        labels = self.tokenizer(topics, truncation=True, padding=True, max_length=2048, return_tensors="pt")["input_ids"]
+        batch = self.tokenizer(snippets, truncation=True, padding=True, max_length=2048, return_tensors="pt")
+
+        ipdb.set_trace()
+        labels = self.tokenizer(topics, truncation=True, padding=True, max_length=2048, return_tensors="pt")
+        labels = labels["input_ids"].masked_fill(labels.attention_mask.ne(1), -100)
+
         batch["labels"] = labels
         return batch
-
 
 
 def step_download_datasets(**kwargs): 
@@ -58,6 +60,9 @@ def step_finetune_llama(**kwargs):
     eval_dataset = load_dataset("leminda-ai/s2orc_small", split='train[:10%]', cache_dir=SCRATCH_DIR)
     train_dataset = load_dataset("leminda-ai/s2orc_small", split='train[10%:]', cache_dir=SCRATCH_DIR)
     collator = DataCollatorCustomTokenization(tokenizer)
+    tokenizer.pad_token = "[PAD]"
+    tokenizer.padding_side = "right"
+
     training_args = TrainingArguments(
         output_dir=f"{SCRATCH_DIR}/llama_7b_hf_finetuned",
         learning_rate=1e-3,
