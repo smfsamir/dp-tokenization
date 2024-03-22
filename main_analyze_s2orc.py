@@ -1,8 +1,10 @@
+import numpy as np
 import loguru
 from functools import partial
 import ipdb
 import os
 from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig, AutoModelForSequenceClassification, DataCollatorWithPadding
+import evaluate
 from flowmason import SingletonStep, MapReduceStep
 from peft import LoraConfig, TaskType, get_peft_model
 from dotenv import load_dotenv
@@ -70,6 +72,23 @@ def step_iterate_dataset(**kwargs):
     # ipdb.set_trace()
     pass
 
+def compute_metrics(eval_pred):
+    # All metrics are already predefined in the HF `evaluate` package
+    precision_metric = evaluate.load("precision")
+    recall_metric = evaluate.load("recall")
+    f1_metric= evaluate.load("f1")
+    accuracy_metric = evaluate.load("accuracy")
+
+    logits, labels = eval_pred # eval_pred is the tuple of predictions and labels returned by the model
+    predictions = np.argmax(logits, axis=-1)
+    precision = precision_metric.compute(predictions=predictions, references=labels)["precision"]
+    recall = recall_metric.compute(predictions=predictions, references=labels)["recall"]
+    f1 = f1_metric.compute(predictions=predictions, references=labels)["f1"]
+    accuracy = accuracy_metric.compute(predictions=predictions, references=labels)["accuracy"]
+    # The trainer is expecting a dictionary where the keys are the metrics names and the values are the scores. 
+    return {"precision": precision, "recall": recall, "f1-score": f1, 'accuracy': accuracy}
+
+
 def step_finetune_llama(**kwargs):
     # load the first 10 percent as eval dataset
     compute_dtype = getattr(torch, "bfloat16")
@@ -90,7 +109,7 @@ def step_finetune_llama(**kwargs):
                        'inCitations', 'outCitations', 'fieldsOfStudy', 'year', 'venue', 
                        'journalName', 'journalVolume', 'journalPages', 'sources', 
                        'doi', 'doiUrl', 'pmid', 'magId']
-    eval_dataset = load_dataset("leminda-ai/s2orc_small", split='train[:5%]', cache_dir=SCRATCH_DIR).filter(lambda x: len(x['fieldsOfStudy']) == 1)
+    eval_dataset = load_dataset("leminda-ai/s2orc_small", split='train[:5%]', cache_dir=SCRATCH_DIR).filter(lambda x: len(x['fieldsOfStudy']) == 1)[:1000]
 
     logger.info(f"Loaded evaluation dataset; {len(eval_dataset)} examples")
     train_dataset = load_dataset("leminda-ai/s2orc_small", split='train[5%:10%]', cache_dir=SCRATCH_DIR).filter(lambda x: len(x['fieldsOfStudy']) == 1)
@@ -150,7 +169,8 @@ def step_finetune_llama(**kwargs):
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
         tokenizer=tokenizer,
-        data_collator=llama_data_collator
+        data_collator=llama_data_collator, 
+        compute_metrics=compute_metrics
     )
     trainer.train()
 
