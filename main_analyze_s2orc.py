@@ -59,7 +59,7 @@ def llama_preprocessing_function(llama_tokenizer, label_2_id):
     label_column = "fieldsOfStudy"
     def _tokenize(example):
         tokenized_dict = llama_tokenizer(example['paperAbstract'], truncation=True, max_length=2048)
-        tokenized_dict['labels'] = label_2_id[example[label_column][0]]
+        tokenized_dict['label'] = label_2_id[example[label_column][0]]
         return tokenized_dict
     return _tokenize
 
