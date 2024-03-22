@@ -183,6 +183,7 @@ def step_login(**kwargs):
     login(token=access_token)
 
 def step_load_trained_model(trained_checkpoint_path, **kwargs):
+    ipdb.set_trace()
     model = AutoPeftModelForSequenceClassification.from_pretrained(trained_checkpoint_path)
     model.eval()
     tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir=SCRATCH_DIR)
@@ -212,9 +213,9 @@ if __name__ == '__main__':
     steps['step_iterate_dataset'] = SingletonStep(step_iterate_dataset, {
         'version': '001'
     })
-    steps['step_finetune_llama'] = SingletonStep(step_finetune_llama, {
-        'version': '001'
-    })
+    # steps['step_finetune_llama'] = SingletonStep(step_finetune_llama, {
+    #     'version': '001'
+    # })
     steps['step_inspect_finedtuned_llama'] = SingletonStep(step_load_trained_model,
     {
         'version': '001', 
