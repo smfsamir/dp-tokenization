@@ -24,9 +24,9 @@ class DataCollatorCustomTokenization:
 
     # def __call__(self, features: List[Dict[str, Union[List[int], torch.Tensor]]]) -> Dict[str, torch.Tensor]:
     def __call__(self, batch: Dict[str, str]) -> Dict[str, torch.Tensor]:
+        ipdb.set_trace()
         snippets = batch['paperAbstract']
         topics = batch['fieldOfStudy']
-        ipdb.set_trace()
 
         batch['input_ids'] = self.tokenizer(snippets, truncation=True, padding=True, max_length=2048, return_tensors="pt")["input_ids"]
         labels = self.tokenizer(topics, truncation=True, padding=True, max_length=2048, return_tensors="pt")["input_ids"]
