@@ -103,8 +103,10 @@ def step_finetune_llama(**kwargs):
     label2id = {field: i for i, field in enumerate(unique_fields)}
     print(f"The unique fields are {unique_fields}")
     llama_preprocess = llama_preprocessing_function(tokenizer, label2id)
+    logger.info("Preprocessing the dataset")
     eval_dataset = eval_dataset.map(llama_preprocess, remove_columns=remove_columns)
-    train_dataset = train_dataset.map(llama_preprocess, remove_columns)
+    train_dataset = train_dataset.map(llama_preprocess, remove_columns=remove_columns)
+    logger.info("Preprocessed the dataset")
     logger.info("Loading the model")
     model = AutoModelForSequenceClassification.from_pretrained("meta-llama/Llama-2-7b-hf", 
                                                                cache_dir=SCRATCH_DIR, 
