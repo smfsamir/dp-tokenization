@@ -175,6 +175,8 @@ def step_finetune_llama(**kwargs):
         compute_metrics=compute_metrics
     )
     trainer.train()
+    model.save_pretrained(f"{SCRATCH_DIR}/llama_7b_hf_finetuned_lora")
+    logger.info(f"Finished training the model; saved it to {SCRATCH_DIR}/llama_7b_hf_finetuned_lora")
 
 def step_load_trained_model(trained_checkpoint_path, **kwargs):
     model = AutoPeftModelForSequenceClassification.from_pretrained(trained_checkpoint_path)
@@ -203,9 +205,9 @@ if __name__ == '__main__':
     steps['step_iterate_dataset'] = SingletonStep(step_iterate_dataset, {
         'version': '001'
     })
-    # steps['step_finetune_llama'] = SingletonStep(step_finetune_llama, {
-    #     'version': '001'
-    # })
+    steps['step_finetune_llama'] = SingletonStep(step_finetune_llama, {
+        'version': '001'
+    })
     steps['step_inspect_finedtuned_llama'] = SingletonStep(step_load_trained_model,
     {
         'version': '001', 
