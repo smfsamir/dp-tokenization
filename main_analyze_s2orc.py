@@ -1,6 +1,6 @@
 import ipdb
 import os
-from transformers import AutoTokenizer, WhisperTokenizer, AutoModelForCausalLM
+from transformers import AutoTokenizer, WhisperTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
 from flowmason import SingletonStep, MapReduceStep
 from dotenv import load_dotenv
 from collections import OrderedDict
@@ -59,6 +59,13 @@ def step_iterate_dataset(**kwargs):
 
 def step_finetune_llama(**kwargs):
     # load the first 10 percent as eval dataset
+    compute_dtype = getattr(torch, "float16")
+    quant_config = BitsAndBytesConfig(
+        load_in_4bit=True,
+        bnb_4bit_quant_type="nf4",
+        bnb_4bit_compute_dtype=compute_dtype,
+        bnb_4bit_use_double_quant=False,
+    )
     model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir=SCRATCH_DIR)
     tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir=SCRATCH_DIR)
     eval_dataset = load_dataset("leminda-ai/s2orc_small", split='train[:10%]', cache_dir=SCRATCH_DIR)
