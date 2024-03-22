@@ -109,7 +109,8 @@ def step_finetune_llama(**kwargs):
                        'inCitations', 'outCitations', 'fieldsOfStudy', 'year', 'venue', 
                        'journalName', 'journalVolume', 'journalPages', 'sources', 
                        'doi', 'doiUrl', 'pmid', 'magId']
-    eval_dataset = load_dataset("leminda-ai/s2orc_small", split='train[:5%]', cache_dir=SCRATCH_DIR).filter(lambda x: len(x['fieldsOfStudy']) == 1)[:1000]
+    eval_dataset = load_dataset("leminda-ai/s2orc_small", split='train[:5%]', cache_dir=SCRATCH_DIR).filter(lambda x: len(x['fieldsOfStudy']) == 1)
+    ipdb.set_trace()
 
     logger.info(f"Loaded evaluation dataset; {len(eval_dataset)} examples")
     train_dataset = load_dataset("leminda-ai/s2orc_small", split='train[5%:10%]', cache_dir=SCRATCH_DIR).filter(lambda x: len(x['fieldsOfStudy']) == 1)
