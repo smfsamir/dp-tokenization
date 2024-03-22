@@ -60,7 +60,7 @@ def step_download_olmo_model(**kwargs):
 def llama_preprocessing_function(llama_tokenizer, label_2_id):
     label_column = "fieldsOfStudy"
     def _tokenize(example):
-        tokenized_dict = llama_tokenizer(example['paperAbstract'], truncation=True, max_length=1024)
+        tokenized_dict = llama_tokenizer(example['paperAbstract'], truncation=True, max_length=2048)
         tokenized_dict['label'] = label_2_id[example[label_column][0]]
         return tokenized_dict
     return _tokenize
@@ -129,8 +129,8 @@ def step_finetune_llama(**kwargs):
     training_args = TrainingArguments(
         output_dir=f"{SCRATCH_DIR}/llama_7b_hf_finetuned_lora",
         learning_rate=1e-4,
-        per_device_train_batch_size=4,
-        per_device_eval_batch_size=4,
+        per_device_train_batch_size=1,
+        per_device_eval_batch_size=1,
         optim="paged_adamw_32bit",
         gradient_accumulation_steps=4,
         num_train_epochs=2,
