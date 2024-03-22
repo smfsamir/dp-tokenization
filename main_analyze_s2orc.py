@@ -80,6 +80,8 @@ def step_finetune_llama(**kwargs):
         learning_rate=1e-4,
         per_device_train_batch_size=4,
         per_device_eval_batch_size=4,
+        optim="paged_adamw_32bit"
+        gradient_accumulation_steps=2,
         num_train_epochs=2,
         weight_decay=0.01,
         logging_steps=25,
