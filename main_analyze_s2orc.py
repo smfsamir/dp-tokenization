@@ -80,15 +80,16 @@ def step_finetune_llama(**kwargs):
         bnb_4bit_use_double_quant=False,
     )
     # model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir=SCRATCH_DIR, quantization_config=quant_config, torch_dtype=compute_dtype)
-    tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir=SCRATCH_DIR)
+    tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir=SCRATCH_DIR, add_prefix_space=True)
     tokenizer.pad_token_id = tokenizer.eos_token_id
     tokenizer.pad_token = tokenizer.eos_token
     # tokenizer.pad_token = "[PAD]"
 
     logger.info("Loading the dataset")
-    eval_dataset = load_dataset("leminda-ai/s2orc_small", split='train[:10%]', cache_dir=SCRATCH_DIR).filter(lambda x: len(x['fieldsOfStudy']) == 1)
+    eval_dataset = load_dataset("leminda-ai/s2orc_small", split='train[:5%]', cache_dir=SCRATCH_DIR).filter(lambda x: len(x['fieldsOfStudy']) == 1)
+    ipdb.set_trace()
     logger.info(f"Loaded evaluation dataset; {len(eval_dataset)} examples")
-    train_dataset = load_dataset("leminda-ai/s2orc_small", split='train[10%:30%]', cache_dir=SCRATCH_DIR).filter(lambda x: len(x['fieldsOfStudy']) == 1)
+    train_dataset = load_dataset("leminda-ai/s2orc_small", split='train[5%:10%]', cache_dir=SCRATCH_DIR).filter(lambda x: len(x['fieldsOfStudy']) == 1)
     logger.info(f"Loaded training dataset; {len(train_dataset)} examples")
     # preprocess the dataset by tokenizing the text
 
