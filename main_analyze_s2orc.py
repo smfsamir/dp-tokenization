@@ -1,3 +1,4 @@
+import loguru
 from functools import partial
 import ipdb
 import os
@@ -18,6 +19,7 @@ from inspect_tokenizer import compute_shortest_tokenizations
 from packages.constants import SCRATCH_DIR
 
 load_dotenv()
+logger = loguru.logger
 
 
 # @dataclass
@@ -78,14 +80,16 @@ def step_finetune_llama(**kwargs):
         bnb_4bit_use_double_quant=False,
     )
     # model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir=SCRATCH_DIR, quantization_config=quant_config, torch_dtype=compute_dtype)
-    ipdb.set_trace()
     tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir=SCRATCH_DIR)
     tokenizer.pad_token_id = tokenizer.eos_token_id
     tokenizer.pad_token = tokenizer.eos_token
     # tokenizer.pad_token = "[PAD]"
 
+    logger.info("Loading the dataset")
     eval_dataset = load_dataset("leminda-ai/s2orc_small", split='train[:10%]', cache_dir=SCRATCH_DIR).filter(lambda x: len(x['fieldsOfStudy']) == 1)
+    logger.info(f"Loaded evaluation dataset; {len(eval_dataset)} examples")
     train_dataset = load_dataset("leminda-ai/s2orc_small", split='train[10%:]', cache_dir=SCRATCH_DIR).filter(lambda x: len(x['fieldsOfStudy']) == 1)
+    logger.info(f"Loaded training dataset; {len(train_dataset)} examples")
     # preprocess the dataset by tokenizing the text
 
     unique_fields = list(set([field for example in eval_dataset for field in example['fieldsOfStudy']]))
@@ -95,12 +99,14 @@ def step_finetune_llama(**kwargs):
     print(f"The unique fields are {unique_fields}")
     llama_preprocess = llama_preprocessing_function(tokenizer, label2id)
     eval_dataset = eval_dataset.map(llama_preprocess)
+    logger.info("Loading the model")
     model = AutoModelForSequenceClassification.from_pretrained("meta-llama/Llama-2-7b-hf", 
                                                                cache_dir=SCRATCH_DIR, 
                                                                quantization_config=quant_config, 
                                                                torch_dtype=compute_dtype, 
                                                                 num_labels=num_fields 
                                                                 )
+    logger.info("Loaded the model")
     model.config.pad_token_id = model.config.eos_token_id
     peft_config = LoraConfig(task_type = TaskType.SEQ_CLS, inference_mode=False, r=16, lora_alpha=16, lora_dropout=0.05, bias="none", 
                              target_modules=[
@@ -129,6 +135,7 @@ def step_finetune_llama(**kwargs):
         load_best_model_at_end=True,
         remove_unused_columns=False
     )
+    logger.info(f"Starting the trainer")
     trainer = Trainer(
         model=model,
         args=training_args,
