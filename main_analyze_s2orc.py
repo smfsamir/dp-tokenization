@@ -79,13 +79,13 @@ def compute_metrics(eval_pred):
     f1_metric= evaluate.load("f1")
     accuracy_metric = evaluate.load("accuracy")
 
+    ipdb.set_trace()
     logits, labels = eval_pred # eval_pred is the tuple of predictions and labels returned by the model
     predictions = np.argmax(logits, axis=-1)
     precision = precision_metric.compute(predictions=predictions, references=labels)["precision"]
     recall = recall_metric.compute(predictions=predictions, references=labels)["recall"]
     f1 = f1_metric.compute(predictions=predictions, references=labels)["f1"]
     accuracy = accuracy_metric.compute(predictions=predictions, references=labels)["accuracy"]
-    ipdb.set_trace()
     # The trainer is expecting a dictionary where the keys are the metrics names and the values are the scores. 
     return {"precision": precision, "recall": recall, "f1-score": f1, 'accuracy': accuracy}
 
