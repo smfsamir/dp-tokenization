@@ -179,7 +179,7 @@ def step_finetune_llama(**kwargs):
     logger.info(f"Finished training the model; saved it to {SCRATCH_DIR}/llama_7b_hf_finetuned_lora")
 
 def step_login(**kwargs):
-    access_token = os.environ["HUGGING_FACE_HUB_TOKEN"]
+    access_token = os.environ["HF_ACCESS_TOKEN"]
     login(token=access_token)
 
 def step_load_trained_model(trained_checkpoint_path, **kwargs):
