@@ -3,7 +3,6 @@ import os
 from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
 from flowmason import SingletonStep, MapReduceStep
 from peft import LoraConfig, TaskType, get_peft_model
-from peft.tuners.lora import mark_only_lora_as_trainable
 from dotenv import load_dotenv
 from collections import OrderedDict
 from huggingface_hub import snapshot_download, login
@@ -71,7 +70,6 @@ def step_finetune_llama(**kwargs):
     model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir=SCRATCH_DIR)
     peft_config = LoraConfig(task_type = TaskType.CAUSAL_LM, inference_mode=False, r=8, lora_alpha=32, lora_dropout=0.1)
     model = get_peft_model(model, peft_config)
-    mark_only_lora_as_trainable(model)
     tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir=SCRATCH_DIR)
     eval_dataset = load_dataset("leminda-ai/s2orc_small", split='train[:10%]', cache_dir=SCRATCH_DIR)
     train_dataset = load_dataset("leminda-ai/s2orc_small", split='train[10%:]', cache_dir=SCRATCH_DIR)
@@ -82,8 +80,8 @@ def step_finetune_llama(**kwargs):
     training_args = TrainingArguments(
         output_dir=f"{SCRATCH_DIR}/llama_7b_hf_finetuned_lora",
         learning_rate=1e-4,
-        per_device_train_batch_size=32,
-        per_device_eval_batch_size=32,
+        per_device_train_batch_size=4,
+        per_device_eval_batch_size=4,
         num_train_epochs=2,
         weight_decay=0.01,
         logging_steps=25,
