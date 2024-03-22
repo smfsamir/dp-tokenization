@@ -120,6 +120,7 @@ def step_finetune_llama(**kwargs):
     num_fields = len(unique_fields)
     # id2label = {i: field for i, field in enumerate(unique_fields)}
     label2id = {field: i for i, field in enumerate(unique_fields)}
+    logger.info(f"The mapping from a label to an id is {label2id}")
     print(f"The unique fields are {unique_fields}")
     llama_preprocess = llama_preprocessing_function(tokenizer, label2id)
     logger.info("Preprocessing the dataset")
@@ -160,7 +161,8 @@ def step_finetune_llama(**kwargs):
         evaluation_strategy="epoch",
         save_strategy="epoch",
         load_best_model_at_end=True,
-        remove_unused_columns=False
+        remove_unused_columns=False,
+        save_total_limit=2
     )
     logger.info(f"Starting the trainer")
     trainer = Trainer(
@@ -176,7 +178,14 @@ def step_finetune_llama(**kwargs):
 
 def step_load_trained_model(trained_checkpoint_path, **kwargs):
     model = AutoPeftModelForSequenceClassification.from_pretrained(trained_checkpoint_path)
+    model.eval()
     tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir=SCRATCH_DIR)
+    tokenizer.pad_token_id = tokenizer.eos_token_id
+    tokenizer.pad_token = tokenizer.eos_token
+    inputs = tokenizer('General thermodynamic relations for the work of polydisperse micelle formation in the model of ideal solution of molecular aggregates in nonionic surfactant solution and the model of "dressed micelles" in ionic solution have been considered. In particular, the dependence of the aggregation work on the total concentration of nonionic surfactant has been analyzed. The analogous dependence for the work of formation of ionic aggregates has been examined with regard to existence of two variables of a state of an ionic aggregate, the aggregation numbers of surface active ions and counterions. To verify the thermodynamic models, the molecular dynamics simulations of micellization in nonionic and ionic surfactant solutions at two total surfactant concentrations have been performed. It was shown that for nonionic surfactants, even at relatively high total surfactant concentrations, the shape and behavior of the work of polydisperse micelle formation found within the model of the ideal solution at different total surfactant concentrations agrees fairly well with the numerical experiment. For ionic surfactant solutions, the numerical results indicate a strong screening of ionic aggregates by the bound counterions. This fact as well as independence of the coefficient in the law of mass action for ionic aggregates on total surfactant concentration and predictable behavior of the "waterfall" lines of surfaces of the aggregation work upholds the model of "dressed" ionic aggregates.')
+    outputs = model(**inputs)
+    logits = outputs.logits
+    prediction = torch.argmax(logits, dim=-1)
     # tokenizer = AutoTokenizer.from_pretrained(trained_checkpoint_path)
     pass
 
@@ -194,6 +203,10 @@ if __name__ == '__main__':
         'version': '001'
     })
     steps['step_finetune_llama'] = SingletonStep(step_finetune_llama, {
+        'version': '001'
+    })
+    steps['step_inspect_finedtuned_llama'] = SingletonStep(step_load_trained_model,
+    {
         'version': '001'
     })
     # steps['download_s2orc_corpus'] = SingletonStep(download_s2orc_corpus, {
