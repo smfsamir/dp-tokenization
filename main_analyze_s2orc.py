@@ -25,7 +25,7 @@ class DataCollatorCustomTokenization:
     # def __call__(self, features: List[Dict[str, Union[List[int], torch.Tensor]]]) -> Dict[str, torch.Tensor]:
     def __call__(self, batch: Dict[str, str]) -> Dict[str, torch.Tensor]:
         snippets = [batch[i]['paperAbstract'] for i in range(len(batch))]
-        topics = [batch[i]['fieldsOfStudy'] for i in range(len(batch))]
+        topics = [' '.join(batch[i]['fieldsOfStudy']) for i in range(len(batch))]
 
         batch = self.tokenizer(snippets, truncation=True, padding=True, max_length=2048, return_tensors="pt")
 
