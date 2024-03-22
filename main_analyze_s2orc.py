@@ -51,12 +51,16 @@ def step_download_olmo_model(**kwargs):
     access_token = os.getenv("HF_ACCESS_TOKEN")
     model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir=SCRATCH_DIR, token=access_token)
     tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir=SCRATCH_DIR, token=access_token)
+    # TODO: add the label to preprocessing and then commence training.
     return True
 
 
-def llama_preprocessing_function(llama_tokenizer):
+def llama_preprocessing_function(llama_tokenizer, label_2_id):
+    label_column = "fieldsOfStudy"
     def _tokenize(example):
-        return llama_tokenizer(example['paperAbstract'], truncation=True, max_length=2048)
+        tokenized_dict = llama_tokenizer(example['paperAbstract'], truncation=True, max_length=2048)
+        tokenized_dict['labels'] = label_2_id[example[label_column][0]]
+        return tokenized_dict
     return _tokenize
 
 def step_iterate_dataset(**kwargs):
@@ -82,7 +86,7 @@ def step_finetune_llama(**kwargs):
     train_dataset = load_dataset("leminda-ai/s2orc_small", split='train[10%:]', cache_dir=SCRATCH_DIR).filter(lambda x: len(x['fieldsOfStudy']) == 1)
     llama_preprocess = llama_preprocessing_function(tokenizer)
     # preprocess the dataset by tokenizing the text
-    eval_dataset = eval_dataset.map(llama_preprocess, batched=True)
+    eval_dataset = eval_dataset.map(llama_preprocess)
 
     unique_fields = list(set([field for example in eval_dataset for field in example['fieldsOfStudy']])))
     id2label = {i: field for i, field in enumerate(unique_fields)}
@@ -100,7 +104,6 @@ def step_finetune_llama(**kwargs):
     model = get_peft_model(model, peft_config)
     tokenizer.padding_side = "right"
 
-    collator = DataCollatorCustomTokenization(tokenizer)
 
     training_args = TrainingArguments(
         output_dir=f"{SCRATCH_DIR}/llama_7b_hf_finetuned_lora",
