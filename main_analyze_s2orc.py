@@ -3,7 +3,7 @@ import loguru
 from functools import partial
 import ipdb
 import os
-from peft import AutoPeftModelForSequenceClassification
+from peft import AutoPeftModelForSequenceClassification, PeftModel
 from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig, AutoModelForSequenceClassification, DataCollatorWithPadding 
 import evaluate
 from flowmason import SingletonStep, MapReduceStep
@@ -89,9 +89,7 @@ def compute_metrics(eval_pred):
     # The trainer is expecting a dictionary where the keys are the metrics names and the values are the scores. 
     return {"precision": precision, "recall": recall, "f1-score": f1, 'accuracy': accuracy}
 
-
-def step_finetune_llama(**kwargs):
-    # load the first 10 percent as eval dataset
+def load_base_model(num_fields: int):
     compute_dtype = getattr(torch, "bfloat16")
     quant_config = BitsAndBytesConfig(
         load_in_4bit=True,
@@ -99,6 +97,16 @@ def step_finetune_llama(**kwargs):
         bnb_4bit_compute_dtype=compute_dtype,
         bnb_4bit_use_double_quant=False,
     )
+    model = AutoModelForSequenceClassification.from_pretrained("meta-llama/Llama-2-7b-hf", 
+                                                               cache_dir=SCRATCH_DIR, 
+                                                               quantization_config=quant_config, 
+                                                               torch_dtype=compute_dtype, 
+                                                                num_labels=num_fields 
+                                                                )
+    return model
+
+def step_finetune_llama(**kwargs):
+    # load the first 10 percent as eval dataset
     # model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir=SCRATCH_DIR, quantization_config=quant_config, torch_dtype=compute_dtype)
     tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir=SCRATCH_DIR)
     tokenizer.pad_token_id = tokenizer.eos_token_id
@@ -118,6 +126,7 @@ def step_finetune_llama(**kwargs):
 
     unique_fields = list(set([field for example in eval_dataset for field in example['fieldsOfStudy']]))
     num_fields = len(unique_fields)
+    model = load_base_model(num_fields)
     # id2label = {i: field for i, field in enumerate(unique_fields)}
     label2id = {field: i for i, field in enumerate(unique_fields)}
     logger.info(f"The mapping from a label to an id is {label2id}")
@@ -128,12 +137,6 @@ def step_finetune_llama(**kwargs):
     train_dataset = train_dataset.map(llama_preprocess, remove_columns=remove_columns)
     logger.info("Preprocessed the dataset")
     logger.info("Loading the model")
-    model = AutoModelForSequenceClassification.from_pretrained("meta-llama/Llama-2-7b-hf", 
-                                                               cache_dir=SCRATCH_DIR, 
-                                                               quantization_config=quant_config, 
-                                                               torch_dtype=compute_dtype, 
-                                                                num_labels=num_fields 
-                                                                )
     logger.info("Loaded the model")
     model.config.pad_token_id = model.config.eos_token_id
     peft_config = LoraConfig(task_type = TaskType.SEQ_CLS, inference_mode=False, r=16, lora_alpha=16, lora_dropout=0.05, bias="none", 
@@ -184,7 +187,9 @@ def step_login(**kwargs):
 
 def step_load_trained_model(trained_checkpoint_path, **kwargs):
     ipdb.set_trace()
-    model = AutoPeftModelForSequenceClassification.from_pretrained(trained_checkpoint_path)
+    # model = AutoPeftModelForSequenceClassification.from_pretrained(trained_checkpoint_path)
+    model = load_base_model(19)
+    model = PeftModel.from_pretrained(model, trained_checkpoint_path)
     model.eval()
     tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir=SCRATCH_DIR)
     tokenizer.pad_token_id = tokenizer.eos_token_id
