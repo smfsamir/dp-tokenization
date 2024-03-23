@@ -56,6 +56,7 @@ def step_download_datasets(**kwargs):
 def llama_preprocessing_function(llama_tokenizer, tokenize_method, label_2_id):
     label_column = "fieldsOfStudy"
     tokenize_func = None
+    assert tokenize_method in ["default", "dp"], logger.error(f"Tokenize method {tokenize_method} not recognized")
     if tokenize_method == "default":
         def _tokenize(example):
             tokenized_dict = llama_tokenizer(example['paperAbstract'], truncation=True, max_length=2048)
@@ -140,7 +141,7 @@ def step_finetune_llama(tokenize_method, **kwargs):
     label2id = {'Psychology': 0, 'Geography': 1, 'Geology': 2, 'Art': 3, 'Engineering': 4, 'Philosophy': 5, 'Medicine': 6, 'Sociology': 7, 'History': 8, 'Computer Science': 9, 'Physics': 10, 'Political Science': 11, 'Chemistry': 12, 'Environmental Science': 13, 'Materials Science': 14, 'Mathematics': 15, 'Economics': 16, 'Biology': 17, 'Business': 18}
     logger.info(f"The mapping from a label to an id is {label2id}")
     print(f"The unique fields are {unique_fields}")
-    llama_preprocess = llama_preprocessing_function(tokenizer, label2id)
+    llama_preprocess = llama_preprocessing_function(tokenizer, tokenize_method, label2id)
     logger.info("Preprocessing the dataset")
     eval_dataset = eval_dataset.map(llama_preprocess, remove_columns=remove_columns)
     train_dataset = train_dataset.map(llama_preprocess, remove_columns=remove_columns)
