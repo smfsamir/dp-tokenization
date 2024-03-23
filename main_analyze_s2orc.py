@@ -157,7 +157,6 @@ def step_finetune_llama(tokenize_method, **kwargs):
     model = get_peft_model(model, peft_config)
     llama_data_collator = DataCollatorWithPadding(tokenizer=tokenizer)
     # tokenizer.padding_side = "right"
-
     training_args = TrainingArguments(
         output_dir=f"{SCRATCH_DIR}/llama_7b_hf_finetuned_lora_{tokenize_method}",
         per_device_train_batch_size=1,
