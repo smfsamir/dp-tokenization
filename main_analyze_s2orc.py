@@ -52,14 +52,6 @@ def step_download_datasets(**kwargs):
     snapshot_download(repo_id = "leminda-ai/s2orc_small", repo_type="dataset", cache_dir=SCRATCH_DIR)
     return True # necessary so it doesn't keep downloading the dataset
 
-def step_download_olmo_model(**kwargs):
-    access_token = os.getenv("HF_ACCESS_TOKEN")
-    model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir=SCRATCH_DIR, token=access_token)
-    tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir=SCRATCH_DIR, token=access_token)
-    # TODO: add the label to preprocessing and then commence training.
-    return True
-
-
 def llama_preprocessing_function(llama_tokenizer, label_2_id):
     label_column = "fieldsOfStudy"
     def _tokenize(example):
@@ -200,7 +192,7 @@ def step_load_trained_model(trained_checkpoint_path, **kwargs):
     label2id = {'Psychology': 0, 'Geography': 1, 'Geology': 2, 'Art': 3, 'Engineering': 4, 'Philosophy': 5, 'Medicine': 6, 'Sociology': 7, 'History': 8, 'Computer Science': 9, 'Physics': 10, 'Political Science': 11, 'Chemistry': 12, 'Environmental Science': 13, 'Materials Science': 14, 'Mathematics': 15, 'Economics': 16, 'Biology': 17, 'Business': 18}
     id2label = {v: k for k, v in label2id.items()}
     prediction = torch.argmax(logits, dim=-1)
-    logger.info(f"The prediction is {id2label[id2label[prediction]]}")
+    logger.info(f"The prediction is {id2label[prediction]}")
     # tokenizer = AutoTokenizer.from_pretrained(trained_checkpoint_path)
 
 
@@ -211,9 +203,6 @@ if __name__ == '__main__':
         'version': '001'
     })
     steps['step_login'] = SingletonStep(step_login, {
-        'version': '001'
-    })
-    steps['step_download_olmo_model'] = SingletonStep(step_download_olmo_model, {
         'version': '001'
     })
     steps['step_iterate_dataset'] = SingletonStep(step_iterate_dataset, {
