@@ -135,7 +135,7 @@ def compute_shortest_tokenizations(
     curr_tokenization = []
     while backtrace_indices:
         backtrace_index = backtrace_indices.pop()
-        curr_tokenization.insert(0, base_representation_s[backtrace_index:curr_index + 1])
+        curr_tokenization.insert(0, ''.join(base_representation_s[backtrace_index:curr_index + 1]))
         curr_index = backtrace_index - 1
         if curr_index == -1:
             tokenizations.append(curr_tokenization)
