@@ -45,6 +45,7 @@ def compute_shortest_tokenizations(
                         min_split_indices.append(j)
         segment_index_dp[i-1] = min_split_indices
     
+
     # do backtracking to get all the tokenizations with the minimum number of tokens, using segment_index_dp
     backtrace_indices = segment_index_dp[-1]
     curr_index = n - 1
