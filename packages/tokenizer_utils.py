@@ -1,6 +1,6 @@
 import ipdb
 from typing import List, Set
-from .dp_tokenize import compute_shortest_tokenizations, obtain_longest_token_tokenization
+from .dp_tokenize import compute_shortest_tokenizations, obtain_longest_token
 
 def dp_tokenize_llama(llama_tokenizer):
     t2i_dict = llama_tokenizer.get_vocab()
@@ -15,7 +15,7 @@ def dp_tokenize_llama(llama_tokenizer):
             if char == ' ':
                 base_representation_s[i] = space_token
         shortest_tokenizations, length = compute_shortest_tokenizations(base_representation_s, vocab, False, None)
-        selected_tokenization = obtain_longest_token_tokenization(shortest_tokenizations)
+        selected_tokenization = obtain_longest_token(shortest_tokenizations)
         encoded_tokenization = [llama_tokenizer.bos_token_id]
         for token in selected_tokenization:
             encoded_tokenization.append(t2i_dict[token])
