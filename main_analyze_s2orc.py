@@ -208,9 +208,9 @@ if __name__ == '__main__':
     steps['step_iterate_dataset'] = SingletonStep(step_iterate_dataset, {
         'version': '001'
     })
-    steps['step_finetune_llama'] = SingletonStep(step_finetune_llama, {
-        'version': '001'
-    })
+    # steps['step_finetune_llama'] = SingletonStep(step_finetune_llama, {
+    #     'version': '001'
+    # })
     steps['step_inspect_finedtuned_llama'] = SingletonStep(step_load_trained_model,
     {
         'version': '001', 
