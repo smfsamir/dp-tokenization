@@ -192,6 +192,7 @@ def step_load_trained_model(trained_checkpoint_path, **kwargs):
     label2id = {'Psychology': 0, 'Geography': 1, 'Geology': 2, 'Art': 3, 'Engineering': 4, 'Philosophy': 5, 'Medicine': 6, 'Sociology': 7, 'History': 8, 'Computer Science': 9, 'Physics': 10, 'Political Science': 11, 'Chemistry': 12, 'Environmental Science': 13, 'Materials Science': 14, 'Mathematics': 15, 'Economics': 16, 'Biology': 17, 'Business': 18}
     id2label = {v: k for k, v in label2id.items()}
     prediction = torch.argmax(logits, dim=-1)
+    ipdb.set_trace()
     logger.info(f"The prediction is {id2label[prediction]}")
     # tokenizer = AutoTokenizer.from_pretrained(trained_checkpoint_path)
 
