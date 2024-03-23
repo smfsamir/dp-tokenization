@@ -58,12 +58,14 @@ def llama_preprocessing_function(llama_tokenizer, tokenize_method, label_2_id):
     tokenize_func = None
     assert tokenize_method in ["default", "dp"], logger.error(f"Tokenize method {tokenize_method} not recognized")
     if tokenize_method == "default":
+        logger.info("Using the default tokenizer to tokenize the text")
         def _tokenize(example):
             tokenized_dict = llama_tokenizer(example['paperAbstract'], truncation=True, max_length=2048)
             tokenized_dict['label'] = label_2_id[example[label_column][0]]
             return tokenized_dict
         tokenize_func = _tokenize
     elif tokenize_method == "dp":
+        logger.info("Using dynamic programming to tokenize the text")
         dp_tokenize, decode_dp_tokenization = dp_tokenize_llama(llama_tokenizer)
         def _tokenize(example):
             tokenized_dict = {}
