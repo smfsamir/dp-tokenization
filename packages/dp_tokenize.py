@@ -1,3 +1,4 @@
+import ipdb
 from typing import List, Set
 
 def compute_shortest_tokenizations(
@@ -21,6 +22,7 @@ def compute_shortest_tokenizations(
     if disregard_word_initial_marker:
         vocabulary = {token.lstrip(word_initial_marker) for token in vocabulary}
 
+    ipdb.set_trace()
     n = len(base_representation_s)
     len_dp = [float('inf')] * (n + 1)
     len_dp[0] = 0  # Base case: empty string
