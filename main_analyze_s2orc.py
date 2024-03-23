@@ -112,7 +112,6 @@ def step_finetune_llama(**kwargs):
     tokenizer.pad_token_id = tokenizer.eos_token_id
     tokenizer.pad_token = tokenizer.eos_token
     # tokenizer.pad_token = "[PAD]"
-
     logger.info("Loading the dataset")
     remove_columns =  ['id', 'title', 'paperAbstract', 'entities', 's2Url', 'pdfUrls', 's2PdfUrl', 'authors', 
                        'inCitations', 'outCitations', 'fieldsOfStudy', 'year', 'venue', 
@@ -120,7 +119,7 @@ def step_finetune_llama(**kwargs):
                        'doi', 'doiUrl', 'pmid', 'magId']
     eval_dataset = load_dataset("leminda-ai/s2orc_small", split='train[:5%]', cache_dir=SCRATCH_DIR).filter(lambda x: len(x['fieldsOfStudy']) == 1).select(range(1000))
     logger.info(f"Loaded evaluation dataset; {len(eval_dataset)} examples")
-    train_dataset = load_dataset("leminda-ai/s2orc_small", split='train[5%:10%]', cache_dir=SCRATCH_DIR).filter(lambda x: len(x['fieldsOfStudy']) == 1)
+    train_dataset = load_dataset("leminda-ai/s2orc_small", split='train[5%:50%]', cache_dir=SCRATCH_DIR).filter(lambda x: len(x['fieldsOfStudy']) == 1)
     logger.info(f"Loaded training dataset; {len(train_dataset)} examples")
     # preprocess the dataset by tokenizing the text
 
@@ -128,7 +127,7 @@ def step_finetune_llama(**kwargs):
     num_fields = len(unique_fields)
     model = load_base_model(num_fields)
     # id2label = {i: field for i, field in enumerate(unique_fields)}
-    label2id = {field: i for i, field in enumerate(unique_fields)}
+    label2id = {'Psychology': 0, 'Geography': 1, 'Geology': 2, 'Art': 3, 'Engineering': 4, 'Philosophy': 5, 'Medicine': 6, 'Sociology': 7, 'History': 8, 'Computer Science': 9, 'Physics': 10, 'Political Science': 11, 'Chemistry': 12, 'Environmental Science': 13, 'Materials Science': 14, 'Mathematics': 15, 'Economics': 16, 'Biology': 17, 'Business': 18}
     logger.info(f"The mapping from a label to an id is {label2id}")
     print(f"The unique fields are {unique_fields}")
     llama_preprocess = llama_preprocessing_function(tokenizer, label2id)
@@ -186,7 +185,6 @@ def step_login(**kwargs):
     login(token=access_token)
 
 def step_load_trained_model(trained_checkpoint_path, **kwargs):
-    ipdb.set_trace()
     # model = AutoPeftModelForSequenceClassification.from_pretrained(trained_checkpoint_path)
     model = load_base_model(19)
     model = PeftModel.from_pretrained(model, trained_checkpoint_path)
@@ -194,13 +192,14 @@ def step_load_trained_model(trained_checkpoint_path, **kwargs):
     tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir=SCRATCH_DIR)
     tokenizer.pad_token_id = tokenizer.eos_token_id
     tokenizer.pad_token = tokenizer.eos_token
-    inputs = tokenizer('General thermodynamic relations for the work of polydisperse micelle formation in the model of ideal solution of molecular aggregates in nonionic surfactant solution and the model of "dressed micelles" in ionic solution have been considered. In particular, the dependence of the aggregation work on the total concentration of nonionic surfactant has been analyzed. The analogous dependence for the work of formation of ionic aggregates has been examined with regard to existence of two variables of a state of an ionic aggregate, the aggregation numbers of surface active ions and counterions. To verify the thermodynamic models, the molecular dynamics simulations of micellization in nonionic and ionic surfactant solutions at two total surfactant concentrations have been performed. It was shown that for nonionic surfactants, even at relatively high total surfactant concentrations, the shape and behavior of the work of polydisperse micelle formation found within the model of the ideal solution at different total surfactant concentrations agrees fairly well with the numerical experiment. For ionic surfactant solutions, the numerical results indicate a strong screening of ionic aggregates by the bound counterions. This fact as well as independence of the coefficient in the law of mass action for ionic aggregates on total surfactant concentration and predictable behavior of the "waterfall" lines of surfaces of the aggregation work upholds the model of "dressed" ionic aggregates.')
+    inputs = tokenizer('General thermodynamic relations for the work of polydisperse micelle formation in the model of ideal solution of molecular aggregates in nonionic surfactant solution and the model of "dressed micelles" in ionic solution have been considered. In particular, the dependence of the aggregation work on the total concentration of nonionic surfactant has been analyzed. The analogous dependence for the work of formation of ionic aggregates has been examined with regard to existence of two variables of a state of an ionic aggregate, the aggregation numbers of surface active ions and counterions. To verify the thermodynamic models, the molecular dynamics simulations of micellization in nonionic and ionic surfactant solutions at two total surfactant concentrations have been performed. It was shown that for nonionic surfactants, even at relatively high total surfactant concentrations, the shape and behavior of the work of polydisperse micelle formation found within the model of the ideal solution at different total surfactant concentrations agrees fairly well with the numerical experiment. For ionic surfactant solutions, the numerical results indicate a strong screening of ionic aggregates by the bound counterions. This fact as well as independence of the coefficient in the law of mass action for ionic aggregates on total surfactant concentration and predictable behavior of the "waterfall" lines of surfaces of the aggregation work upholds the model of "dressed" ionic aggregates.', return_tensors="pt", padding=True, truncation=True, max_length=2048)
     outputs = model(**inputs)
     logits = outputs.logits
+    label2id = {'Psychology': 0, 'Geography': 1, 'Geology': 2, 'Art': 3, 'Engineering': 4, 'Philosophy': 5, 'Medicine': 6, 'Sociology': 7, 'History': 8, 'Computer Science': 9, 'Physics': 10, 'Political Science': 11, 'Chemistry': 12, 'Environmental Science': 13, 'Materials Science': 14, 'Mathematics': 15, 'Economics': 16, 'Biology': 17, 'Business': 18}
+    id2label = {v: k for k, v in label2id.items()}
     prediction = torch.argmax(logits, dim=-1)
-    ipdb.set_trace()
+    logger.info(f"The prediction is {id2label[id2label[prediction]]}")
     # tokenizer = AutoTokenizer.from_pretrained(trained_checkpoint_path)
-    pass
 
 
 if __name__ == '__main__':
