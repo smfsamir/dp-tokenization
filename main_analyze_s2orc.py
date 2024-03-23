@@ -57,6 +57,7 @@ def llama_preprocessing_function(llama_tokenizer, tokenize_method, label_2_id):
     label_column = "fieldsOfStudy"
     tokenize_func = None
     assert tokenize_method in ["default", "dp"], logger.error(f"Tokenize method {tokenize_method} not recognized")
+    ipdb.set_trace()
     if tokenize_method == "default":
         logger.info("Using the default tokenizer to tokenize the text")
         def _tokenize(example):
