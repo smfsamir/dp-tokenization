@@ -19,6 +19,7 @@ import torch
 from dataclasses import dataclass
 
 from inspect_tokenizer import compute_shortest_tokenizations
+from packages.tokenizer_utils import dp_tokenize_llama
 from packages.constants import SCRATCH_DIR
 
 load_dotenv()
@@ -52,13 +53,27 @@ def step_download_datasets(**kwargs):
     snapshot_download(repo_id = "leminda-ai/s2orc_small", repo_type="dataset", cache_dir=SCRATCH_DIR)
     return True # necessary so it doesn't keep downloading the dataset
 
-def llama_preprocessing_function(llama_tokenizer, label_2_id):
+def llama_preprocessing_function(llama_tokenizer, tokenize_method, label_2_id):
     label_column = "fieldsOfStudy"
-    def _tokenize(example):
-        tokenized_dict = llama_tokenizer(example['paperAbstract'], truncation=True, max_length=2048)
-        tokenized_dict['label'] = label_2_id[example[label_column][0]]
-        return tokenized_dict
-    return _tokenize
+    tokenize_func = None
+    if tokenize_method == "default":
+        def _tokenize(example):
+            tokenized_dict = llama_tokenizer(example['paperAbstract'], truncation=True, max_length=2048)
+            tokenized_dict['label'] = label_2_id[example[label_column][0]]
+            return tokenized_dict
+        tokenize_func = _tokenize
+    elif tokenize_method == "dp":
+        dp_tokenize, decode_dp_tokenization = dp_tokenize_llama(llama_tokenizer)
+        def _tokenize(example):
+            tokenized_dict = {}
+            shortest_tokenization = dp_tokenize(example['paperAbstract'])
+            assert decode_dp_tokenization(shortest_tokenization) == example['paperAbstract'], ipdb.set_trace()
+            tokenized_dict['input_ids'] = shortest_tokenization
+            tokenized_dict['attention_mask'] = [1] * len(shortest_tokenization)
+            tokenized_dict['label'] = label_2_id[example[label_column][0]]
+            return tokenized_dict
+        tokenize_func = _tokenize
+    return tokenize_func
 
 def step_iterate_dataset(**kwargs):
     # load the dataset
@@ -97,8 +112,11 @@ def load_base_model(num_fields: int):
                                                                 )
     return model
 
-def step_finetune_llama(**kwargs):
-    # load the first 10 percent as eval dataset
+def step_finetune_llama(tokenize_method, **kwargs):
+    """Finetune the Llama model on the S2ORC dataset.
+
+    tokenize_method (str): one of ['default', 'dp', 'flota']
+    """
     # model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir=SCRATCH_DIR, quantization_config=quant_config, torch_dtype=compute_dtype)
     tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir=SCRATCH_DIR)
     tokenizer.pad_token_id = tokenizer.eos_token_id
@@ -141,7 +159,7 @@ def step_finetune_llama(**kwargs):
     # tokenizer.padding_side = "right"
 
     training_args = TrainingArguments(
-        output_dir=f"{SCRATCH_DIR}/llama_7b_hf_finetuned_lora",
+        output_dir=f"{SCRATCH_DIR}/llama_7b_hf_finetuned_lora_{tokenize_method}",
         per_device_train_batch_size=1,
         lr_scheduler_type="linear",
         learning_rate=1e-5,
@@ -209,15 +227,17 @@ if __name__ == '__main__':
     steps['step_iterate_dataset'] = SingletonStep(step_iterate_dataset, {
         'version': '001'
     })
-    # steps['step_finetune_llama'] = SingletonStep(step_finetune_llama, {
+    # steps['step_finetune_llama_default'] = SingletonStep(step_finetune_llama, {
+    #     'tokenize_method': 'default',
     #     'version': '001'
     # })
+    steps['step_finetune_llama_dp'] = SingletonStep(step_finetune_llama, {
+        'tokenize_method': 'dp',
+        'version': '001'
+    })
     steps['step_inspect_finedtuned_llama'] = SingletonStep(step_load_trained_model,
     {
         'version': '001', 
         'trained_checkpoint_path': f"{SCRATCH_DIR}/llama_7b_hf_finetuned_lora"
     })
-    # steps['download_s2orc_corpus'] = SingletonStep(download_s2orc_corpus, {
-    #     'version': '001'
-    # }, cache_location)
     conduct(os.path.join(SCRATCH_DIR, "tokenization_cache"), steps, "tokenization_logs")
