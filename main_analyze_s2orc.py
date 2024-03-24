@@ -1,3 +1,4 @@
+import polars as pl
 from tqdm import tqdm
 import numpy as np
 import loguru
@@ -18,9 +19,10 @@ from transformers import TrainingArguments, Trainer, DataCollatorForSeq2Seq
 from typing import Dict, Tuple, List
 import torch
 from dataclasses import dataclass
+from bidict import bidict
 
 from inspect_tokenizer import compute_shortest_tokenizations
-from packages.tokenizer_utils import dp_tokenize_llama
+from packages.tokenizer_utils import dp_tokenize_llama, pretokenize_with_llama
 from packages.constants import SCRATCH_DIR
 
 load_dotenv()
@@ -222,6 +224,12 @@ def step_probe_eval_dataset(**kwargs):
     progress = tqdm(total=len(eval_abstracts))
     total_improved = 0
     total = 0 
+
+    vocab = bidict(llama_tokenizer.get_vocab())
+    pretokenize_func = pretokenize_with_llama(llama_tokenizer, vocab)
+
+    improved_tokens = [] # List[List[str]]
+    worse_tokens = [] # List[List[str]]
     for i in range(len(eval_domains)):
         abstract = eval_abstracts[i]
         dp_length = len(dp_tokenize(abstract))
@@ -230,10 +238,33 @@ def step_probe_eval_dataset(**kwargs):
         default_lengths.append(default_length)
         if dp_length < default_length:
             total_improved += 1
+            # TODO: pretokenize the abstract, and find exactly which tokens get shortened. 
+            abstract_pretok = pretokenize_func(abstract)
+            for token in abstract_pretok:
+                if len(dp_tokenize(token)) < len(llama_tokenizer.encode(token)):
+                    improved_tokens.append(
+                        [vocab.inverse[token] for token in dp_tokenize(token)]
+                    )
+                    worse_tokens.append(
+                        [vocab.inverse[token] for token in llama_tokenizer.encode(token)]
+                    )
+        else:
+            improved_tokens.append([])
+            worse_tokens.append([])
+
         total += 1
         if i % 1000 == 0:
             logger.info(f"{total_improved}/{total} examples are shorter")
         progress.update(1)
+    result_frame = pl.DataFrame({
+        "abstract": eval_abstracts,
+        "domain": eval_domains,
+        "dp_length": dp_lengths,
+        "default_length": default_lengths, 
+        "improved_tokens": improved_tokens,
+        "worse_tokens": worse_tokens
+    }) 
+
     ipdb.set_trace()
 
 def step_load_trained_model(trained_checkpoint_path, **kwargs):
