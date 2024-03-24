@@ -264,7 +264,7 @@ def step_probe_eval_dataset(**kwargs):
         "improved_tokens": improved_tokens,
         "worse_tokens": worse_tokens
     }) 
-
+    result_frame.write_json("dp_vs_default_tokenization_s2orc.json")
     ipdb.set_trace()
 
 def step_load_trained_model(trained_checkpoint_path, **kwargs):
