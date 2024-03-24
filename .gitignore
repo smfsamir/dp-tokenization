@@ -1,0 +1,6 @@
+*.json
+*.model
+*.csv
+*.txt
+hf_cache/*
+*.tsv
