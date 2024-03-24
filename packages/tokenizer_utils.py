@@ -8,17 +8,31 @@ def dp_tokenize_llama(llama_tokenizer):
     space_token = '▁'
     vocab = set(llama_tokenizer.get_vocab())
     def dp_tokenize(input_str) -> List[int]:
+        # TODO: we need to pre-tokenize the input string
         base_representation_s = list(input_str)
+        pretokenized = []
+        prev_segment_index = 0
         for i, char in enumerate(base_representation_s):
             if i == 0:
                 base_representation_s[i] = space_token + char
             if char == ' ':
                 base_representation_s[i] = space_token
-        shortest_tokenizations, length = compute_shortest_tokenizations(base_representation_s, vocab, False, None, 1)
-        selected_tokenization = obtain_longest_token(shortest_tokenizations)
+                pretokenized.append(base_representation_s[prev_segment_index:i ])
+                prev_segment_index = i 
+        pretokenized.append(base_representation_s[prev_segment_index:])
+        print(pretokenized)
+        selected_tokenizations= []
+        for pretokenized_seq in pretokenized:
+            shortest_tokenizations, length = compute_shortest_tokenizations(pretokenized_seq, vocab, False, None, 1)
+            selected_tokenization = obtain_longest_token(shortest_tokenizations)
+            selected_tokenizations.append(selected_tokenization)
+        print(selected_tokenizations)
         encoded_tokenization = [llama_tokenizer.bos_token_id]
-        for token in selected_tokenization:
-            encoded_tokenization.append(t2i_dict[token])
+        for tokenization in selected_tokenizations:
+            for token in tokenization:
+                encoded_tokenization.append(t2i_dict[token])
+        print(encoded_tokenization)
+        ipdb.set_trace()
         return encoded_tokenization
     
     def decode_dp_tokenization(encoding: List[int]):
