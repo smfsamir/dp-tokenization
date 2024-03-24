@@ -182,9 +182,11 @@ def step_finetune_llama(tokenize_method, **kwargs):
         logging_steps=100,
         warmup_ratio=0.1, 
         max_steps=4000,
+        eval_steps = 1000,
+        save_steps = 1000,
         max_grad_norm=0.3,
-        evaluation_strategy="epoch",
-        save_strategy="epoch",
+        evaluation_strategy="steps",
+        save_strategy="steps",
         load_best_model_at_end=True,
         remove_unused_columns=False,
         save_total_limit=2
@@ -206,6 +208,10 @@ def step_finetune_llama(tokenize_method, **kwargs):
 def step_login(**kwargs):
     access_token = os.environ["HF_ACCESS_TOKEN"]
     login(token=access_token)
+
+def step_probe_eval_dataset(**kwargs):
+    eval_dataset = load_dataset("leminda-ai/s2orc_small", split='train[:5%]', cache_dir=SCRATCH_DIR).filter(lambda x: len(x['fieldsOfStudy']) == 1)
+    ipdb.set_trace()
 
 def step_load_trained_model(trained_checkpoint_path, **kwargs):
     # model = AutoPeftModelForSequenceClassification.from_pretrained(trained_checkpoint_path)
@@ -242,13 +248,17 @@ if __name__ == '__main__':
     #     'tokenize_method': 'default',
     #     'version': '001'
     # })
-    steps['step_finetune_llama_dp'] = SingletonStep(step_finetune_llama, {
-        'tokenize_method': 'dp',
+    # steps['step_finetune_llama_dp'] = SingletonStep(step_finetune_llama, {
+    #     'tokenize_method': 'dp',
+    #     'version': '001'
+    # })
+    steps['step_probe_eval_dataset'] = SingletonStep(step_probe_eval_dataset, {
         'version': '001'
     })
-    steps['step_inspect_finedtuned_llama'] = SingletonStep(step_load_trained_model,
-    {
-        'version': '001', 
-        'trained_checkpoint_path': f"{SCRATCH_DIR}/llama_7b_hf_finetuned_lora"
-    })
+
+    # steps['step_inspect_finedtuned_llama'] = SingletonStep(step_load_trained_model,
+    # {
+    #     'version': '001', 
+    #     'trained_checkpoint_path': f"{SCRATCH_DIR}/llama_7b_hf_finetuned_lora"
+    # })
     conduct(os.path.join(SCRATCH_DIR, "tokenization_cache"), steps, "tokenization_logs")
