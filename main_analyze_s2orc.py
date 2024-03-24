@@ -214,7 +214,7 @@ def step_login(**kwargs):
 
 def step_probe_eval_dataset(**kwargs):
     llama_tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir=SCRATCH_DIR)
-    eval_dataset = load_dataset("leminda-ai/s2orc_small", split='train[:5%]', cache_dir=SCRATCH_DIR).filter(lambda x: len(x['fieldsOfStudy']) == 1).select(range(250))
+    eval_dataset = load_dataset("leminda-ai/s2orc_small", split='train[:5%]', cache_dir=SCRATCH_DIR).filter(lambda x: len(x['fieldsOfStudy']) == 1)
     eval_abstracts = [example['paperAbstract'] for example in eval_dataset]
     eval_domains = [example['fieldsOfStudy'][0] for example in eval_dataset]
     dp_tokenize, decode_dp_tokenization = dp_tokenize_llama(llama_tokenizer)
