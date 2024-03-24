@@ -81,15 +81,16 @@ def dp_tokenize_llama(llama_tokenizer, pretokenize_option = 'llama'):
     
     def decode_dp_tokenization(encoding: List[int]):
         # first, decode the encoding using the i2t_dict
-        decoded_tokens = [i2t_dict[token] for token in encoding][1:]
-        for i in range(len(decoded_tokens)):
-            if i == 0:
-                # strip the space token
-                decoded_tokens[i] = decoded_tokens[i].lstrip(space_token)
-            elif decoded_tokens[i] in manual_mapping:
-                decoded_tokens[i] = manual_mapping[decoded_tokens[i]]
-            else:
-                decoded_tokens[i] = decoded_tokens[i].replace(space_token, ' ')
-        decoded_string = ''.join(decoded_tokens)
-        return decoded_string
+        return llama_tokenizer.decode(encoding)[4:]
+        # decoded_tokens = [i2t_dict[token] for token in encoding][1:]
+        # for i in range(len(decoded_tokens)):
+        #     if i == 0:
+        #         # strip the space token
+        #         decoded_tokens[i] = decoded_tokens[i].lstrip(space_token)
+        #     elif decoded_tokens[i] in manual_mapping:
+        #         decoded_tokens[i] = manual_mapping[decoded_tokens[i]]
+        #     else:
+        #         decoded_tokens[i] = decoded_tokens[i].replace(space_token, ' ')
+        # decoded_string = ''.join(decoded_tokens)
+        # return decoded_string
     return dp_tokenize, decode_dp_tokenization
