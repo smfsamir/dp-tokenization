@@ -1,5 +1,6 @@
 import ipdb
 from transformers import AutoTokenizer
+from bidict import bidict
 # from inspect_tokenizer import min_tokens_for_string, compute_shortest_tokenizations
 from packages.dp_tokenize import compute_shortest_tokenizations
 from packages.tokenizer_utils import dp_tokenize_llama
@@ -100,3 +101,27 @@ def test_llama_tokenize_reversal_2():
     decoded_str = invert_dp_tokenize(encoding)
     assert decoded_str == input_str
     print(f"Original string: {input_str}")
+
+def test_llama_tokenize_reversal_3():
+    input_str = "PURPOSE\nPatients with cancer frequently use herbal supplements and concomitant medications along with antineoplastic agents. These patients are at high risk of herb-drug interactions (HDIs) and drug-drug interactions (DDIs). We aimed to determine clinically relevant DDIs and HDIs leading to pharmaceutical intervention.\n\n\nMETHODS\nPatients starting a new anticancer therapy were asked to complete a questionnaire to identify concomitant use of any over-the-counter drug or herbal supplement. Potential DDIs and HDIs were identified using two different databases. If a potentially clinically relevant DDI was recognized by the clinical pharmacist, a notification was sent to the prescribing oncologist, who decided whether to carry out a suggested intervention. Regression analyses were performed to identify variables associated with clinically relevant DDIs.\n\n\nRESULTS\nA total of 149 patients were included in this study, with 36 potentially clinically relevant DDIs identified in 26 patients (17.4%; 95% CI, 11.3% to 23.5%), all of them leading to therapy modifications. In total, four patients (2.7%; 95% CI, 0.1% to 5.3%) had experienced clinical consequences from DDIs at the time of pharmacist notification. Additionally, 84 patients (56.4%; 95% CI, 48.4% to 64.4%) reported using concurrent herbal supplements, and 122 possible HDIs were detected. Concomitant use of two or more drugs was independently associated with high risk of a clinically significant DDI (odds ratio, 2.53; 95% CI, 1.08 to 5.91; P = .03).\n\n\nCONCLUSION\nPotentially clinically relevant DDIs and possible HDIs were frequently detected in this prospective study. A multidisciplinary approach is required to identify and avoid potentially harmful combinations with anticancer therapy."
+    tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir="hf_cache")
+    dp_encode_llama, invert_dp_tokenize = dp_tokenize_llama(tokenizer)
+    encoding = dp_encode_llama(input_str)
+    decoded_str = invert_dp_tokenize(encoding)
+    assert decoded_str == input_str
+
+def test_compare_pretokenizers():
+    tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir="hf_cache")
+    input_str = "midafternoon"
+    encoding = tokenizer.encode(input_str)
+    vocab_bidict = bidict(tokenizer.get_vocab())
+    # print the encoding tokens
+    print([vocab_bidict.inverse[t] for t in encoding])
+    # print the encoding
+    dp_encode_llama, invert_dp_tokenize = dp_tokenize_llama(tokenizer, "raw")
+    encoding = dp_encode_llama(input_str)
+    print([vocab_bidict.inverse[t] for t in encoding])
+
+    dp_encode_llama, invert_dp_tokenize = dp_tokenize_llama(tokenizer, "llama")
+    encoding = dp_encode_llama(input_str)
+    print([vocab_bidict.inverse[t] for t in encoding])

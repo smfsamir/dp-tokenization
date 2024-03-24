@@ -72,7 +72,6 @@ def compute_shortest_tokenizations(
                 tokenizations.append(curr_tokenization.copy()) 
     return complete_tokenizations, len_dp[-1]
 
-
 def obtain_longest_token(tokenizations: List[List[str]]) -> List[str]:
     """Obtain the longest tokenization from a list of tokenizations.
 
