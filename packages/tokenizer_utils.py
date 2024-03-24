@@ -76,7 +76,6 @@ def dp_tokenize_llama(llama_tokenizer, pretokenize_option = 'llama'):
         for tokenization in selected_tokenizations:
             for token in tokenization:
                 encoded_tokenization.append(t2i_dict[token])
-        print(encoded_tokenization)
         return encoded_tokenization
     
     def decode_dp_tokenization(encoding: List[int]):
