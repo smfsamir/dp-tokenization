@@ -69,7 +69,12 @@ def llama_preprocessing_function(llama_tokenizer, tokenize_method, label_2_id):
         dp_tokenize, decode_dp_tokenization = dp_tokenize_llama(llama_tokenizer)
         def _tokenize(example):
             tokenized_dict = {}
-            shortest_tokenization = dp_tokenize(example['paperAbstract'])
+            try:
+                shortest_tokenization = dp_tokenize(example['paperAbstract'])
+            except:
+                logger.error(f"Failed to tokenize the text {example['paperAbstract']}")
+                ipdb.set_trace()
+                return None
             assert decode_dp_tokenization(shortest_tokenization) == example['paperAbstract'], ipdb.set_trace()
             tokenized_dict['input_ids'] = shortest_tokenization
             tokenized_dict['attention_mask'] = [1] * len(shortest_tokenization)
