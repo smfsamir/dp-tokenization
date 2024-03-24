@@ -240,14 +240,18 @@ def step_probe_eval_dataset(**kwargs):
             total_improved += 1
             # TODO: pretokenize the abstract, and find exactly which tokens get shortened. 
             abstract_pretok = pretokenize_func(abstract)
+            improved_tokens_specific = []
+            worse_tokens_specific = []
             for token in abstract_pretok:
                 if len(dp_tokenize(token)) < len(llama_tokenizer.encode(token)):
-                    improved_tokens.append(
+                    improved_tokens_specific.append(
                         [vocab.inverse[token] for token in dp_tokenize(token)]
                     )
-                    worse_tokens.append(
+                    worse_tokens_specific.append(
                         [vocab.inverse[token] for token in llama_tokenizer.encode(token)]
                     )
+            improved_tokens.append(improved_tokens_specific)
+            worse_tokens.append(worse_tokens_specific)
         else:
             improved_tokens.append([])
             worse_tokens.append([])
