@@ -220,11 +220,19 @@ def step_probe_eval_dataset(**kwargs):
     dp_lengths = []
     default_lengths = []
     progress = tqdm(total=len(eval_abstracts))
+    total_improved = 0
+    total = 0 
     for i in range(len(eval_domains)):
         abstract = eval_abstracts[i]
-        domain = eval_domains[i]
         dp_length = len(dp_tokenize(abstract))
         default_length = len(llama_tokenizer.encode(abstract))
+        dp_lengths.append(dp_length)
+        default_lengths.append(default_length)
+        if dp_length < default_length:
+            total_improved += 1
+        total += 1
+        if i % 1000 == 0:
+            logger.info(f"{total_improved}/{total} examples are shorter")
         progress.update(1)
     ipdb.set_trace()
 
