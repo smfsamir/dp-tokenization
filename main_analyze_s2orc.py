@@ -1,3 +1,4 @@
+from tqdm import tqdm
 import numpy as np
 import loguru
 from functools import partial
@@ -218,11 +219,13 @@ def step_probe_eval_dataset(**kwargs):
 
     dp_lengths = []
     default_lengths = []
+    progress = tqdm(total=len(eval_abstracts))
     for i in range(len(eval_domains)):
         abstract = eval_abstracts[i]
         domain = eval_domains[i]
         dp_length = len(dp_tokenize(abstract))
         default_length = len(llama_tokenizer.encode(abstract))
+        progress.update(1)
     ipdb.set_trace()
 
 def step_load_trained_model(trained_checkpoint_path, **kwargs):
