@@ -1,11 +1,14 @@
 import ipdb
 from typing import List, Set
+import loguru 
+logger = loguru.logger
 
 def compute_shortest_tokenizations(
     base_representation_s: List[str], 
     vocabulary: Set[str], 
     disregard_word_initial_marker: bool, 
-    word_initial_marker: str
+    word_initial_marker: str,
+    max_search_results = 100
      ) -> List[List[str]]:
     """Compute the shortest tokenization of the input string using the provided vocabulary.
 
@@ -22,7 +25,6 @@ def compute_shortest_tokenizations(
     if disregard_word_initial_marker:
         vocabulary = {token.lstrip(word_initial_marker) for token in vocabulary}
 
-    ipdb.set_trace()
     n = len(base_representation_s)
     len_dp = [float('inf')] * (n + 1)
     len_dp[0] = 0  # Base case: empty string
@@ -45,23 +47,31 @@ def compute_shortest_tokenizations(
                         min_split_indices.append(j)
         segment_index_dp[i-1] = min_split_indices
     
-
-    # do backtracking to get all the tokenizations with the minimum number of tokens, using segment_index_dp
-    backtrace_indices = segment_index_dp[-1]
-    curr_index = n - 1
-    tokenizations = []
-    curr_tokenization = []
+    backtrace_indices = segment_index_dp[-1].copy()
+    curr_indices = [] 
+    for i in range(len(segment_index_dp[-1])):
+        curr_indices.append(n)
+    tokenizations = [] 
+    for i in range(len(segment_index_dp[-1])):
+        tokenizations.append([])
+    complete_tokenizations = []
     while backtrace_indices:
         backtrace_index = backtrace_indices.pop()
+        curr_index = curr_indices.pop() - 1
+        curr_tokenization = tokenizations.pop()
+        # if not curr_index in discovered:
         curr_tokenization.insert(0, ''.join(base_representation_s[backtrace_index:curr_index + 1]))
-        curr_index = backtrace_index - 1
-        if curr_index == -1:
-            tokenizations.append(curr_tokenization)
-            curr_tokenization = []
-            curr_index = n - 1
+        if 0 in segment_index_dp[curr_index]:
+            complete_tokenizations.append(curr_tokenization)
+            if len(complete_tokenizations) > max_search_results:
+                break
         else:
-            backtrace_indices.extend(segment_index_dp[curr_index])
-    return tokenizations, len_dp[-1]
+            backtrace_indices.extend(segment_index_dp[backtrace_index - 1].copy())
+            curr_indices.extend(len(segment_index_dp[backtrace_index - 1]) * [backtrace_index])
+            for i in range(len(segment_index_dp[backtrace_index - 1])):
+                tokenizations.append(curr_tokenization.copy()) 
+    return complete_tokenizations, len_dp[-1]
+
 
 def obtain_longest_token(tokenizations: List[List[str]]) -> List[str]:
     """Obtain the longest tokenization from a list of tokenizations.

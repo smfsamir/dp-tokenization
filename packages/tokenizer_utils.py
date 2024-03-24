@@ -14,7 +14,7 @@ def dp_tokenize_llama(llama_tokenizer):
                 base_representation_s[i] = space_token + char
             if char == ' ':
                 base_representation_s[i] = space_token
-        shortest_tokenizations, length = compute_shortest_tokenizations(base_representation_s, vocab, False, None)
+        shortest_tokenizations, length = compute_shortest_tokenizations(base_representation_s, vocab, False, None, 1)
         selected_tokenization = obtain_longest_token(shortest_tokenizations)
         encoded_tokenization = [llama_tokenizer.bos_token_id]
         for token in selected_tokenization:
