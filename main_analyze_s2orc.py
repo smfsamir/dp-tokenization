@@ -127,6 +127,10 @@ def load_base_model(num_fields: int):
                                                                 )
     return model
 
+def step_select_train_indices(**kwargs):
+    train_dataset = load_dataset("leminda-ai/s2orc_small", split='train[5%:50%]', cache_dir=SCRATCH_DIR).filter(lambda x: len(x['fieldsOfStudy']) == 1)
+    ipdb.set_trace()
+
 def step_finetune_llama(tokenize_method, **kwargs):
     """Finetune the Llama model on the S2ORC dataset.
 
@@ -146,6 +150,7 @@ def step_finetune_llama(tokenize_method, **kwargs):
     logger.info(f"Loaded evaluation dataset; {len(eval_dataset)} examples")
     train_dataset = load_dataset("leminda-ai/s2orc_small", split='train[5%:50%]', cache_dir=SCRATCH_DIR).filter(lambda x: len(x['fieldsOfStudy']) == 1)
     logger.info(f"Loaded training dataset; {len(train_dataset)} examples")
+    ipdb.set_trace()
     # preprocess the dataset by tokenizing the text
 
     unique_fields = list(set([field for example in eval_dataset for field in example['fieldsOfStudy']]))
@@ -313,7 +318,6 @@ if __name__ == '__main__':
     steps['step_probe_eval_dataset'] = SingletonStep(step_probe_eval_dataset, {
         'version': '001'
     })
-
     # steps['step_inspect_finedtuned_llama'] = SingletonStep(step_load_trained_model,
     # {
     #     'version': '001', 
