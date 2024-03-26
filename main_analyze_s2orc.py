@@ -5,6 +5,7 @@ import loguru
 from functools import partial
 import ipdb
 import os
+import polars as pl
 from peft import AutoPeftModelForSequenceClassification, PeftModel
 from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig, AutoModelForSequenceClassification, DataCollatorWithPadding 
 import evaluate
@@ -129,7 +130,33 @@ def load_base_model(num_fields: int):
 
 def step_select_train_indices(**kwargs):
     train_dataset = load_dataset("leminda-ai/s2orc_small", split='train[5%:50%]', cache_dir=SCRATCH_DIR).filter(lambda x: len(x['fieldsOfStudy']) == 1)
-    ipdb.set_trace()
+    label2id = {'Psychology': 0, 'Geography': 1, 'Geology': 2, 'Art': 3, 'Engineering': 4, 'Philosophy': 5, 'Medicine': 6, 'Sociology': 7, 'History': 8, 'Computer Science': 9, 'Physics': 10, 'Political Science': 11, 'Chemistry': 12, 'Environmental Science': 13, 'Materials Science': 14, 'Mathematics': 15, 'Economics': 16, 'Biology': 17, 'Business': 18}
+    fields = list(label2id.keys())
+    num_train_examples_per_field = 1500
+    num_eval_examples_per_field = 200
+    field_frames = []
+    for field in tqdm(fields):
+        train_ids = []
+        eval_ids = []
+        train_dataset_field = train_dataset.filter(lambda x: x['fieldsOfStudy'][0] == 'Medicine')['id'] #list of strs
+        assert len(train_dataset_field) >= num_train_examples_per_field, logger.error(f"Field {field} has less than {num_train_examples_per_field} examples")
+        selection_indices = np.random.choice(len(train_dataset_field), num_train_examples_per_field + num_eval_examples_per_field, replace=False)
+        for ind in range(num_train_examples_per_field):
+            selection_index = selection_indices[ind]
+            train_ids.append(train_dataset_field[selection_index])
+        for ind in range(num_train_examples_per_field, num_train_examples_per_field + num_eval_examples_per_field):
+            selection_index = selection_indices[ind]
+            eval_ids.append(train_dataset_field[selection_index])
+        # add the train_ids and eval_ids to the a polars dataframe, and add it to the field_frames list
+        id_frame = pl.DataFrame({
+            "id": train_ids + eval_ids,
+            "split": ["train"] * num_train_examples_per_field + ["eval"] * num_eval_examples_per_field,
+            "field": [field] * (num_train_examples_per_field + num_eval_examples_per_field)
+        })
+        field_frames.append(id_frame)
+    complete_id_frame = pl.concat(field_frames)
+    return complete_id_frame
+
 
 def step_finetune_llama(tokenize_method, **kwargs):
     """Finetune the Llama model on the S2ORC dataset.
