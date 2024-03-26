@@ -181,7 +181,6 @@ def step_finetune_llama(index_frame: pl.DataFrame, tokenize_method, **kwargs):
     train_dataset = dataset.filter(lambda x: x['id'] in train_ids)
     # train_dataset = load_dataset("leminda-ai/s2orc_small", split='train[5%:50%]', cache_dir=SCRATCH_DIR).filter(lambda x: len(x['fieldsOfStudy']) == 1)
     logger.info(f"Loaded training dataset; {len(train_dataset)} examples")
-    ipdb.set_trace()
     # preprocess the dataset by tokenizing the text
 
     unique_fields = list(set([field for example in eval_dataset for field in example['fieldsOfStudy']]))
@@ -220,7 +219,7 @@ def step_finetune_llama(index_frame: pl.DataFrame, tokenize_method, **kwargs):
         weight_decay=0.01,
         logging_steps=100,
         warmup_ratio=0.1, 
-        max_steps=4000,
+        max_steps=7125,
         eval_steps = 1000,
         save_steps = 1000,
         max_grad_norm=0.3,
@@ -305,7 +304,6 @@ def step_probe_eval_dataset(**kwargs):
         "worse_tokens": worse_tokens
     }) 
     result_frame.write_json("dp_vs_default_tokenization_s2orc.json")
-    ipdb.set_trace()
 
 def step_load_trained_model(trained_checkpoint_path, **kwargs):
     # model = AutoPeftModelForSequenceClassification.from_pretrained(trained_checkpoint_path)
