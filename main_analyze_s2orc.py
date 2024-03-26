@@ -173,7 +173,7 @@ def step_finetune_llama(index_frame: pl.DataFrame, tokenize_method, **kwargs):
     tokenizer.pad_token = tokenizer.eos_token
     # tokenizer.pad_token = "[PAD]"
     logger.info("Loading the dataset")
-        eval_ids = set(index_frame.filter(pl.col('split') == 'eval')['id'].to_list())
+    eval_ids = set(index_frame.filter(pl.col('split') == 'eval')['id'].to_list())
     train_ids = set(index_frame.filter(pl.col('split') == 'train')['id'].to_list())
     dataset = load_dataset("leminda-ai/s2orc_small", split='train[5%:50%]', cache_dir=SCRATCH_DIR)
     eval_dataset = dataset.filter(lambda x: x['id'] in eval_ids)
@@ -347,16 +347,16 @@ if __name__ == '__main__':
     steps['step_select_train_indices'] = SingletonStep(step_select_train_indices, {
         'version': '001'
     })
-    steps['step_finetune_llama_default'] = SingletonStep(step_finetune_llama, {
-        'tokenize_method': 'default',
-        'index_frame': 'step_select_train_indices',
-        'version': '001'
-    })
-    steps['step_finetune_llama_dp'] = SingletonStep(step_finetune_llama, {
-        'tokenize_method': 'dp',
-        'index_frame': 'step_select_train_indices',
-        'version': '001'
-    })
+    # steps['step_finetune_llama_default'] = SingletonStep(step_finetune_llama, {
+    #     'tokenize_method': 'default',
+    #     'index_frame': 'step_select_train_indices',
+    #     'version': '001'
+    # })
+    # steps['step_finetune_llama_dp'] = SingletonStep(step_finetune_llama, {
+    #     'tokenize_method': 'dp',
+    #     'index_frame': 'step_select_train_indices',
+    #     'version': '001'
+    # })
     steps['step_probe_default_trained_model'] = SingletonStep(step_probe_eval_dataset, {
         'version': '001', 
         'trained_checkpoint_path': f"{SCRATCH_DIR}/llama_7b_hf_finetuned_lora_default"
