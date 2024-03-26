@@ -173,9 +173,8 @@ def step_finetune_llama(index_frame: pl.DataFrame, tokenize_method, **kwargs):
                        'inCitations', 'outCitations', 'fieldsOfStudy', 'year', 'venue', 
                        'journalName', 'journalVolume', 'journalPages', 'sources', 
                        'doi', 'doiUrl', 'pmid', 'magId']
-    eval_ids = set(index_frame.filter(lambda x: x['split'] == 'eval')['id'].to_list())
-    train_ids = set(index_frame.filter(lambda x: x['split'] == 'train')['id'].to_list())
-    ipdb.set_trace()
+    eval_ids = set(index_frame.filter(pl.col('split') == 'eval')['id'].to_list())
+    train_ids = set(index_frame.filter(pl.col('split') == 'train')['id'].to_list())
     dataset = load_dataset("leminda-ai/s2orc_small", split='train[5%:50%]', cache_dir=SCRATCH_DIR)
     eval_dataset = dataset.filter(lambda x: x['id'] in eval_ids)
     logger.info(f"Loaded evaluation dataset; {len(eval_dataset)} examples")
