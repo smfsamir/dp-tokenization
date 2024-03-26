@@ -138,7 +138,7 @@ def step_select_train_indices(**kwargs):
     for field in tqdm(fields):
         train_ids = []
         eval_ids = []
-        train_dataset_field = train_dataset.filter(lambda x: x['fieldsOfStudy'][0] == 'Medicine')['id'] #list of strs
+        train_dataset_field = train_dataset.filter(lambda x: x['fieldsOfStudy'][0] == field)['id'] #list of strs
         assert len(train_dataset_field) >= num_train_examples_per_field, logger.error(f"Field {field} has less than {num_train_examples_per_field} examples")
         selection_indices = np.random.choice(len(train_dataset_field), num_train_examples_per_field + num_eval_examples_per_field, replace=False)
         for ind in range(num_train_examples_per_field):
