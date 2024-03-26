@@ -158,7 +158,7 @@ def step_select_train_indices(**kwargs):
     return complete_id_frame
 
 
-def step_finetune_llama(tokenize_method, **kwargs):
+def step_finetune_llama(index_frame: pl.DataFrame, tokenize_method, **kwargs):
     """Finetune the Llama model on the S2ORC dataset.
 
     tokenize_method (str): one of ['default', 'dp', 'flota']
@@ -173,9 +173,14 @@ def step_finetune_llama(tokenize_method, **kwargs):
                        'inCitations', 'outCitations', 'fieldsOfStudy', 'year', 'venue', 
                        'journalName', 'journalVolume', 'journalPages', 'sources', 
                        'doi', 'doiUrl', 'pmid', 'magId']
-    eval_dataset = load_dataset("leminda-ai/s2orc_small", split='train[:5%]', cache_dir=SCRATCH_DIR).filter(lambda x: len(x['fieldsOfStudy']) == 1).select(range(1000))
+    eval_ids = set(index_frame.filter(lambda x: x['split'] == 'eval')['id'].to_list())
+    train_ids = set(index_frame.filter(lambda x: x['split'] == 'train')['id'].to_list())
+    ipdb.set_trace()
+    dataset = load_dataset("leminda-ai/s2orc_small", split='train[5%:50%]', cache_dir=SCRATCH_DIR)
+    eval_dataset = dataset.filter(lambda x: x['id'] in eval_ids)
     logger.info(f"Loaded evaluation dataset; {len(eval_dataset)} examples")
-    train_dataset = load_dataset("leminda-ai/s2orc_small", split='train[5%:50%]', cache_dir=SCRATCH_DIR).filter(lambda x: len(x['fieldsOfStudy']) == 1)
+    train_dataset = dataset.filter(lambda x: x['id'] in train_ids)
+    # train_dataset = load_dataset("leminda-ai/s2orc_small", split='train[5%:50%]', cache_dir=SCRATCH_DIR).filter(lambda x: len(x['fieldsOfStudy']) == 1)
     logger.info(f"Loaded training dataset; {len(train_dataset)} examples")
     ipdb.set_trace()
     # preprocess the dataset by tokenizing the text
@@ -334,15 +339,17 @@ if __name__ == '__main__':
     steps['step_iterate_dataset'] = SingletonStep(step_iterate_dataset, {
         'version': '001'
     })
-    # steps['step_finetune_llama_default'] = SingletonStep(step_finetune_llama, {
-    #     'tokenize_method': 'default',
-    #     'version': '001'
-    # })
-    # steps['step_finetune_llama_dp'] = SingletonStep(step_finetune_llama, {
-    #     'tokenize_method': 'dp',
-    #     'version': '001'
-    # })
     steps['step_select_train_indices'] = SingletonStep(step_select_train_indices, {
+        'version': '001'
+    })
+    steps['step_finetune_llama_default'] = SingletonStep(step_finetune_llama, {
+        'tokenize_method': 'default',
+        'index_frame': 'step_select_train_indices',
+        'version': '001'
+    })
+    steps['step_finetune_llama_dp'] = SingletonStep(step_finetune_llama, {
+        'tokenize_method': 'dp',
+        'index_frame': 'step_select_train_indices',
         'version': '001'
     })
     steps['step_probe_eval_dataset'] = SingletonStep(step_probe_eval_dataset, {
