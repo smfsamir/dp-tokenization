@@ -8,6 +8,7 @@ import os
 import polars as pl
 from peft import AutoPeftModelForSequenceClassification, PeftModel
 from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig, AutoModelForSequenceClassification, DataCollatorWithPadding 
+from sklearn.metrics import confusion_matrix, accuracy_score
 import evaluate
 from flowmason import SingletonStep, MapReduceStep
 from peft import LoraConfig, TaskType, get_peft_model
@@ -318,17 +319,23 @@ def step_load_trained_model(trained_checkpoint_path,
     tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir=SCRATCH_DIR)
     tokenizer.pad_token_id = tokenizer.eos_token_id
     tokenizer.pad_token = tokenizer.eos_token
-    label2id = {'Psychology': 0, 'Geography': 1, 'Geology': 2, 'Art': 3, 'Engineering': 4, 'Philosophy': 5, 'Medicine': 6, 'Sociology': 7, 'History': 8, 'Computer Science': 9, 'Physics': 10, 'Political Science': 11, 'Chemistry': 12, 'Environmental Science': 13, 'Materials Science': 14, 'Mathematics': 15, 'Economics': 16, 'Biology': 17, 'Business': 18}
+    label2id = bidict({'Psychology': 0, 'Geography': 1, 'Geology': 2, 'Art': 3, 'Engineering': 4, 'Philosophy': 5, 'Medicine': 6, 'Sociology': 7, 'History': 8, 'Computer Science': 9, 'Physics': 10, 'Political Science': 11, 'Chemistry': 12, 'Environmental Science': 13, 'Materials Science': 14, 'Mathematics': 15, 'Economics': 16, 'Biology': 17, 'Business': 18})
     llama_preprocess = llama_preprocessing_function(tokenizer, 'default', label2id)
     eval_dataset = eval_dataset.map(llama_preprocess, remove_columns=remove_columns)
-
-    ipdb.set_trace()
-
-    outputs = model(**inputs)
-    logits = outputs.logits
-    id2label = {v: k for k, v in label2id.items()}
-    prediction = torch.argmax(logits, dim=-1)
-    logger.info(f"The prediction is {id2label[prediction]}")
+    predictions = []
+    # assess how good the model is at predicting Medicine.
+    for example in eval_dataset.filter(lambda x: x['label'] == 6):
+        input_ids = torch.tensor(example['input_ids']).to(model.device).unsqueeze(0)
+        attention_mask = torch.tensor(example['attention_mask']).to(model.device).unsqueeze(0)
+        inputs = {'input_ids': input_ids, 'attention_mask': attention_mask}
+        outputs = model(**inputs)
+        logits = outputs.logits
+        prediction = torch.argmax(logits, dim=-1)
+        predictions.append(prediction.item())
+    predictions = [label2id.inverse[pred] for pred in predictions]
+    confusion_matrix = confusion_matrix(predictions, ['Medicine'] * len(predictions))
+    print(confusion_matrix)
+    print(accuracy_score(predictions, ['Medicine'] * len(predictions)))
     # tokenizer = AutoTokenizer.from_pretrained(trained_checkpoint_path)
 
 
