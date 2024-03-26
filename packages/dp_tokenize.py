@@ -81,6 +81,7 @@ def obtain_longest_token(tokenizations: List[List[str]]) -> List[str]:
     Returns:
         List[str]: The longest tokenization.
     """
-    tokenization_lengths = [len(tokenization) for tokenization in tokenizations]
+    # tokenization_lengths = [len(tokenization) for tokenization in tokenizations]
+    tokenization_lengths = [max([len(t) for t in tokenization]) for tokenization in tokenizations]
     # return the tokenization with the longest length
     return tokenizations[tokenization_lengths.index(max(tokenization_lengths))]
