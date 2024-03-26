@@ -360,12 +360,12 @@ if __name__ == '__main__':
     steps['step_probe_default_trained_model'] = SingletonStep(step_load_trained_model, {
         'version': '001', 
         'index_frame': 'step_select_train_indices', # 'step_select_train_indices
-        'trained_checkpoint_path': f"{SCRATCH_DIR}/llama_7b_hf_finetuned_lora_default"
+        'trained_checkpoint_path': f"{SCRATCH_DIR}/llama_7b_hf_finetuned_lora_default/checkpoint-7000"
     })
     steps['step_probe_dp_trained_model'] = SingletonStep(step_load_trained_model, {
         'version': '001',
         'index_frame': 'step_select_train_indices',
-        'trained_checkpoint_path': f"{SCRATCH_DIR}/llama_7b_hf_finetuned_lora_dp"
+        'trained_checkpoint_path': f"{SCRATCH_DIR}/llama_7b_hf_finetuned_lora_dp/checkpoint-7000"
     })
     # steps['step_inspect_finedtuned_llama'] = SingletonStep(step_load_trained_model,
     # {
