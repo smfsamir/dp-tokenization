@@ -157,6 +157,10 @@ def step_select_train_indices(**kwargs):
     complete_id_frame = pl.concat(field_frames)
     return complete_id_frame
 
+remove_columns =  ['id', 'title', 'paperAbstract', 'entities', 's2Url', 'pdfUrls', 's2PdfUrl', 'authors', 
+                       'inCitations', 'outCitations', 'fieldsOfStudy', 'year', 'venue', 
+                       'journalName', 'journalVolume', 'journalPages', 'sources', 
+                       'doi', 'doiUrl', 'pmid', 'magId']
 
 def step_finetune_llama(index_frame: pl.DataFrame, tokenize_method, **kwargs):
     """Finetune the Llama model on the S2ORC dataset.
@@ -169,11 +173,7 @@ def step_finetune_llama(index_frame: pl.DataFrame, tokenize_method, **kwargs):
     tokenizer.pad_token = tokenizer.eos_token
     # tokenizer.pad_token = "[PAD]"
     logger.info("Loading the dataset")
-    remove_columns =  ['id', 'title', 'paperAbstract', 'entities', 's2Url', 'pdfUrls', 's2PdfUrl', 'authors', 
-                       'inCitations', 'outCitations', 'fieldsOfStudy', 'year', 'venue', 
-                       'journalName', 'journalVolume', 'journalPages', 'sources', 
-                       'doi', 'doiUrl', 'pmid', 'magId']
-    eval_ids = set(index_frame.filter(pl.col('split') == 'eval')['id'].to_list())
+        eval_ids = set(index_frame.filter(pl.col('split') == 'eval')['id'].to_list())
     train_ids = set(index_frame.filter(pl.col('split') == 'train')['id'].to_list())
     dataset = load_dataset("leminda-ai/s2orc_small", split='train[5%:50%]', cache_dir=SCRATCH_DIR)
     eval_dataset = dataset.filter(lambda x: x['id'] in eval_ids)
@@ -305,15 +305,23 @@ def step_probe_eval_dataset(**kwargs):
     }) 
     result_frame.write_json("dp_vs_default_tokenization_s2orc.json")
 
-def step_load_trained_model(trained_checkpoint_path, **kwargs):
+def step_load_trained_model(trained_checkpoint_path, 
+                            index_frame: pl.DataFrame,
+                            **kwargs):
     # model = AutoPeftModelForSequenceClassification.from_pretrained(trained_checkpoint_path)
     model = load_base_model(19)
     model = PeftModel.from_pretrained(model, trained_checkpoint_path)
     model.eval()
+    eval_ids = set(index_frame.filter(pl.col('split') == 'eval')['id'].to_list())
+    dataset = load_dataset("leminda-ai/s2orc_small", split='train[5%:50%]', cache_dir=SCRATCH_DIR)
+    eval_dataset = dataset.filter(lambda x: x['id'] in eval_ids)
+    llama_preprocess = llama_preprocessing_function(tokenizer, 'default', label2id)
+    eval_dataset = eval_dataset.map(llama_preprocess, remove_columns=remove_columns)
+
     tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir=SCRATCH_DIR)
     tokenizer.pad_token_id = tokenizer.eos_token_id
     tokenizer.pad_token = tokenizer.eos_token
-    inputs = tokenizer('General thermodynamic relations for the work of polydisperse micelle formation in the model of ideal solution of molecular aggregates in nonionic surfactant solution and the model of "dressed micelles" in ionic solution have been considered. In particular, the dependence of the aggregation work on the total concentration of nonionic surfactant has been analyzed. The analogous dependence for the work of formation of ionic aggregates has been examined with regard to existence of two variables of a state of an ionic aggregate, the aggregation numbers of surface active ions and counterions. To verify the thermodynamic models, the molecular dynamics simulations of micellization in nonionic and ionic surfactant solutions at two total surfactant concentrations have been performed. It was shown that for nonionic surfactants, even at relatively high total surfactant concentrations, the shape and behavior of the work of polydisperse micelle formation found within the model of the ideal solution at different total surfactant concentrations agrees fairly well with the numerical experiment. For ionic surfactant solutions, the numerical results indicate a strong screening of ionic aggregates by the bound counterions. This fact as well as independence of the coefficient in the law of mass action for ionic aggregates on total surfactant concentration and predictable behavior of the "waterfall" lines of surfaces of the aggregation work upholds the model of "dressed" ionic aggregates.', return_tensors="pt", padding=True, truncation=True, max_length=2048)
+    ipdb.set_trace()
 
     outputs = model(**inputs)
     logits = outputs.logits
@@ -349,8 +357,13 @@ if __name__ == '__main__':
         'index_frame': 'step_select_train_indices',
         'version': '001'
     })
-    steps['step_probe_eval_dataset'] = SingletonStep(step_probe_eval_dataset, {
-        'version': '001'
+    steps['step_probe_default_trained_model'] = SingletonStep(step_probe_eval_dataset, {
+        'version': '001', 
+        'trained_checkpoint_path': f"{SCRATCH_DIR}/llama_7b_hf_finetuned_lora_default"
+    })
+    steps['step_probe_dp_trained_model'] = SingletonStep(step_probe_eval_dataset, {
+        'version': '001',
+        'trained_checkpoint_path': f"{SCRATCH_DIR}/llama_7b_hf_finetuned_lora_dp"
     })
     # steps['step_inspect_finedtuned_llama'] = SingletonStep(step_load_trained_model,
     # {
