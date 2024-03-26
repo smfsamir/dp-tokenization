@@ -307,6 +307,7 @@ def step_probe_eval_dataset(**kwargs):
     result_frame.write_json("dp_vs_default_tokenization_s2orc.json")
 
 def step_load_trained_model(trained_checkpoint_path, 
+                            tokenization_method: str,
                             index_frame: pl.DataFrame,
                             **kwargs):
     # model = AutoPeftModelForSequenceClassification.from_pretrained(trained_checkpoint_path)
@@ -320,7 +321,7 @@ def step_load_trained_model(trained_checkpoint_path,
     tokenizer.pad_token_id = tokenizer.eos_token_id
     tokenizer.pad_token = tokenizer.eos_token
     label2id = bidict({'Psychology': 0, 'Geography': 1, 'Geology': 2, 'Art': 3, 'Engineering': 4, 'Philosophy': 5, 'Medicine': 6, 'Sociology': 7, 'History': 8, 'Computer Science': 9, 'Physics': 10, 'Political Science': 11, 'Chemistry': 12, 'Environmental Science': 13, 'Materials Science': 14, 'Mathematics': 15, 'Economics': 16, 'Biology': 17, 'Business': 18})
-    llama_preprocess = llama_preprocessing_function(tokenizer, 'default', label2id)
+    llama_preprocess = llama_preprocessing_function(tokenizer, tokenization_method, label2id)
     eval_dataset = eval_dataset.map(llama_preprocess, remove_columns=remove_columns)
     predictions = []
     # assess how good the model is at predicting Medicine.
