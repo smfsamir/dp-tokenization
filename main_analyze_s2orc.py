@@ -318,6 +318,7 @@ def step_load_trained_model(trained_checkpoint_path,
     tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir=SCRATCH_DIR)
     tokenizer.pad_token_id = tokenizer.eos_token_id
     tokenizer.pad_token = tokenizer.eos_token
+    label2id = {'Psychology': 0, 'Geography': 1, 'Geology': 2, 'Art': 3, 'Engineering': 4, 'Philosophy': 5, 'Medicine': 6, 'Sociology': 7, 'History': 8, 'Computer Science': 9, 'Physics': 10, 'Political Science': 11, 'Chemistry': 12, 'Environmental Science': 13, 'Materials Science': 14, 'Mathematics': 15, 'Economics': 16, 'Biology': 17, 'Business': 18}
     llama_preprocess = llama_preprocessing_function(tokenizer, 'default', label2id)
     eval_dataset = eval_dataset.map(llama_preprocess, remove_columns=remove_columns)
 
@@ -325,7 +326,6 @@ def step_load_trained_model(trained_checkpoint_path,
 
     outputs = model(**inputs)
     logits = outputs.logits
-    label2id = {'Psychology': 0, 'Geography': 1, 'Geology': 2, 'Art': 3, 'Engineering': 4, 'Philosophy': 5, 'Medicine': 6, 'Sociology': 7, 'History': 8, 'Computer Science': 9, 'Physics': 10, 'Political Science': 11, 'Chemistry': 12, 'Environmental Science': 13, 'Materials Science': 14, 'Mathematics': 15, 'Economics': 16, 'Biology': 17, 'Business': 18}
     id2label = {v: k for k, v in label2id.items()}
     prediction = torch.argmax(logits, dim=-1)
     logger.info(f"The prediction is {id2label[prediction]}")
