@@ -315,12 +315,12 @@ def step_load_trained_model(trained_checkpoint_path,
     eval_ids = set(index_frame.filter(pl.col('split') == 'eval')['id'].to_list())
     dataset = load_dataset("leminda-ai/s2orc_small", split='train[5%:50%]', cache_dir=SCRATCH_DIR)
     eval_dataset = dataset.filter(lambda x: x['id'] in eval_ids)
-    llama_preprocess = llama_preprocessing_function(tokenizer, 'default', label2id)
-    eval_dataset = eval_dataset.map(llama_preprocess, remove_columns=remove_columns)
-
     tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir=SCRATCH_DIR)
     tokenizer.pad_token_id = tokenizer.eos_token_id
     tokenizer.pad_token = tokenizer.eos_token
+    llama_preprocess = llama_preprocessing_function(tokenizer, 'default', label2id)
+    eval_dataset = eval_dataset.map(llama_preprocess, remove_columns=remove_columns)
+
     ipdb.set_trace()
 
     outputs = model(**inputs)
