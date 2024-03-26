@@ -333,6 +333,7 @@ def step_load_trained_model(trained_checkpoint_path,
         prediction = torch.argmax(logits, dim=-1)
         predictions.append(prediction.item())
     predictions = [label2id.inverse[pred] for pred in predictions]
+    print(pl.Series(predictions).value_counts().to_pandas().to_markdown())
     cm = confusion_matrix(predictions, ['Medicine'] * len(predictions))
     print(cm)
     print(accuracy_score(predictions, ['Medicine'] * len(predictions)))
