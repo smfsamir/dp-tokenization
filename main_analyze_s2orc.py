@@ -315,6 +315,9 @@ if __name__ == '__main__':
     #     'tokenize_method': 'dp',
     #     'version': '001'
     # })
+    steps['step_select_train_indices'] = SingletonStep(step_select_train_indices, {
+        'version': '001'
+    })
     steps['step_probe_eval_dataset'] = SingletonStep(step_probe_eval_dataset, {
         'version': '001'
     })
