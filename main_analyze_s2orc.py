@@ -338,6 +338,7 @@ def step_load_trained_model(trained_checkpoint_path,
     cm = confusion_matrix(ground_truths, predictions)
     print(cm)
     print(accuracy_score(predictions, ground_truths))
+
     # tokenizer = AutoTokenizer.from_pretrained(trained_checkpoint_path)
 
 
