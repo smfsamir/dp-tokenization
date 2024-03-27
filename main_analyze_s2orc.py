@@ -314,9 +314,7 @@ def step_load_trained_model(trained_checkpoint_path,
     model = load_base_model(19)
     model = PeftModel.from_pretrained(model, trained_checkpoint_path)
     model.eval()
-    eval_ids = set(index_frame.filter(pl.col('split') == 'eval')['id'].to_list())
-    dataset = load_dataset("leminda-ai/s2orc_small", split='train[5%:50%]', cache_dir=SCRATCH_DIR)
-    eval_dataset = dataset.filter(lambda x: x['id'] in eval_ids)
+    eval_dataset = load_dataset("leminda-ai/s2orc_small", split='train[:5%]', cache_dir=SCRATCH_DIR)
     tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir=SCRATCH_DIR)
     tokenizer.pad_token_id = tokenizer.eos_token_id
     tokenizer.pad_token = tokenizer.eos_token
@@ -325,7 +323,9 @@ def step_load_trained_model(trained_checkpoint_path,
     eval_dataset = eval_dataset.map(llama_preprocess, remove_columns=remove_columns)
     predictions = []
     # assess how good the model is at predicting Medicine.
-    for example in eval_dataset.filter(lambda x: x['label'] == 6):
+    ground_truths = []
+    for example in eval_dataset:
+        ground_truths.append(label2id.inverse[example['label']])
         input_ids = torch.tensor(example['input_ids']).to(model.device).unsqueeze(0)
         attention_mask = torch.tensor(example['attention_mask']).to(model.device).unsqueeze(0)
         inputs = {'input_ids': input_ids, 'attention_mask': attention_mask}
@@ -334,10 +334,11 @@ def step_load_trained_model(trained_checkpoint_path,
         prediction = torch.argmax(logits, dim=-1)
         predictions.append(prediction.item())
     predictions = [label2id.inverse[pred] for pred in predictions]
+    ground_truths = [label2id.inverse[gt] for gt in ground_truths]
     print(pl.Series(predictions).value_counts().to_pandas().to_markdown())
-    cm = confusion_matrix(predictions, ['Medicine'] * len(predictions))
+    cm = confusion_matrix(ground_truths, predictions)
     print(cm)
-    print(accuracy_score(predictions, ['Medicine'] * len(predictions)))
+    print(accuracy_score(predictions, ground_truths))
     # tokenizer = AutoTokenizer.from_pretrained(trained_checkpoint_path)
 
 
