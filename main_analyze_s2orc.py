@@ -324,7 +324,7 @@ def step_load_trained_model(trained_checkpoint_path,
     predictions = []
     # assess how good the model is at predicting Medicine.
     ground_truths = []
-    for example in eval_dataset:
+    for example in tqdm(eval_dataset):
         ground_truths.append(label2id.inverse[example['label']])
         input_ids = torch.tensor(example['input_ids']).to(model.device).unsqueeze(0)
         attention_mask = torch.tensor(example['attention_mask']).to(model.device).unsqueeze(0)
