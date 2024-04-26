@@ -152,6 +152,8 @@ def test_bloom_tokenizer():
     encoding_dp = dp_encode_bloom(input_str)
     decoded_str = invert_dp_tokenize(encoding_dp)
     assert decoded_str == input_str
+    print(f"Default encoding length: {len(encoding_default)}")
+    print(f"DP encoding length: {len(encoding_dp)}")
     assert len(encoding_dp) <= len(encoding_default)
 
 def test_bloom_tokenizer_space():
@@ -164,3 +166,15 @@ def test_bloom_tokenizer_space():
     decoded_str = invert_dp_tokenize(encoding_dp)
     assert decoded_str == input_str
     assert len(encoding_dp) <= len(encoding_default)
+
+def test_bloom_tokenizer_long_string():
+    s = "Im klinischen Alltag ist das Pro-re-nata-Regime (PRN) weniger gut planbar, bedarf häufigerer Termine und bringt weniger gute klinische Ergebnisse als Treat and Extend (T&E). Aktuelle Literatur spricht für den Nutzen eines Regimewechsels, jedoch fehlt eine praktische Richtlinie. „Best-Practice“-Empfehlungen für die Praxis oder kleinere Institutionen werden hier für alle 3 Phasen angeboten: a) Vorbereitungsphase mit Ändern der Terminorganisation, Schulung von Personal und Patienten, Definieren von Qualitätsparametern, Definieren des Umstellungsschemas (Umstellung für alle zu Termin X oder individuell bei Verschlechterung); b) Umstellungsphase (erhöhter Ressourcenbedarf durch zunächst verkürzte Behandlungsintervalle) und c) Folgephase (Qualitätskontrolle)."
+    tokenizer = AutoTokenizer.from_pretrained("bigscience/bloom-3b", cache_dir=HF_CACHE_DIR, use_fast=False)
+    dp_encode_bloom, invert_dp_tokenize = dp_tokenize_bloom(tokenizer, HF_CACHE_DIR)
+    encoding_dp = dp_encode_bloom(s)
+    decoded_str = invert_dp_tokenize(encoding_dp)
+    default_encoding = tokenizer.encode(s)
+    print(f"Default encoding length: {len(default_encoding)}")
+    print(f"DP encoding length: {len(encoding_dp)}")
+
+    assert decoded_str == s
