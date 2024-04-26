@@ -6,9 +6,8 @@ logger = loguru.logger
 def compute_shortest_tokenizations(
     base_representation_s: List[str], 
     vocabulary: Set[str], 
-    disregard_word_initial_marker: bool, 
-    word_initial_marker: str,
-    max_search_results = 100
+    disregard_word_initial_marker: bool,  
+    word_initial_marker: str
      ) -> List[List[str]]:
     """Compute the shortest tokenization of the input string using the provided vocabulary.
 
@@ -16,7 +15,7 @@ def compute_shortest_tokenizations(
         base_representation_s (List[str]): The input string to tokenize, represented as a list of atomic tokens
             (e.g., characters for Unigram, bytes for Byte-level BPE, etc.)
         vocabulary (Set[str]): The set of all tokens in the vocabulary.
-        disregard_word_initial_marker (bool): Whether to disregard the word initial marker. This means 
+        disregard_word_initial_marker (bool): Whether to disregard the word initial marker. This means  # TODO: I don't think this option is being handled properly at the moment.
             that if we have two tokens that are only different in that one has the word initial marker and the other
             does not, we will treat them as the same token. Set this to true for encoding. But for decoding, 
             you'd want to set this to false in order to be able to decode to a unique, orthographically readable string.
@@ -26,7 +25,7 @@ def compute_shortest_tokenizations(
         vocabulary = {token.lstrip(word_initial_marker) for token in vocabulary}
 
     n = len(base_representation_s)
-    len_dp = [float('inf')] * (n + 1)
+    len_dp = list(range(n + 1))
     len_dp[0] = 0  # Base case: empty string
     segment_index_dp = [[i] for i in range(n)]
     
@@ -63,8 +62,6 @@ def compute_shortest_tokenizations(
         curr_tokenization.insert(0, ''.join(base_representation_s[backtrace_index:curr_index + 1]))
         if 0 in segment_index_dp[curr_index]:
             complete_tokenizations.append(curr_tokenization)
-            if len(complete_tokenizations) > max_search_results:
-                break
         else:
             backtrace_indices.extend(segment_index_dp[backtrace_index - 1].copy())
             curr_indices.extend(len(segment_index_dp[backtrace_index - 1]) * [backtrace_index])

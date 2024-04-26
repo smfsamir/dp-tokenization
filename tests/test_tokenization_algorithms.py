@@ -1,9 +1,15 @@
+import os
 import ipdb
 from transformers import AutoTokenizer
 from bidict import bidict
+from dotenv import load_dotenv
 # from inspect_tokenizer import min_tokens_for_string, compute_shortest_tokenizations
 from packages.dp_tokenize import compute_shortest_tokenizations
-from packages.tokenizer_utils import dp_tokenize_llama
+from packages.tokenizer_utils import dp_tokenize_llama, dp_tokenize_bloom
+
+load_dotenv()
+
+HF_CACHE_DIR = os.getenv("HF_CACHE_DIR") # create .env file in root and set this to whereever to save
 
 def test_quadratic_algorithm():
     vocabulary = {"a", "ab", "abc", "d", "cd", "bcd", "b", "c"}
@@ -110,6 +116,17 @@ def test_llama_tokenize_reversal_3():
     decoded_str = invert_dp_tokenize(encoding)
     assert decoded_str == input_str
 
+def test_llama_tokenize_reversal_4():
+    input_str = "OptimalLengthTokenization"
+    tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir="hf_cache")
+    dp_encode_llama, invert_dp_tokenize = dp_tokenize_llama(tokenizer)
+    encoding = dp_encode_llama(input_str)
+    print(tokenizer.convert_ids_to_tokens(encoding))
+    print(tokenizer.convert_ids_to_tokens(tokenizer.encode(input_str)))
+    decoded_str = invert_dp_tokenize(encoding)
+    print(dp_encode_llama(input_str))
+    assert decoded_str == input_str
+
 def test_compare_pretokenizers():
     tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf", cache_dir="hf_cache")
     input_str = "midafternoon"
@@ -125,3 +142,25 @@ def test_compare_pretokenizers():
     dp_encode_llama, invert_dp_tokenize = dp_tokenize_llama(tokenizer, "llama")
     encoding = dp_encode_llama(input_str)
     print([vocab_bidict.inverse[t] for t in encoding])
+
+def test_bloom_tokenizer():
+    tokenizer = AutoTokenizer.from_pretrained("bigscience/bloom-3b", cache_dir=HF_CACHE_DIR, use_fast=False)
+    input_str = "the weather"
+    encoding_default = tokenizer.encode(input_str)
+
+    dp_encode_bloom, invert_dp_tokenize = dp_tokenize_bloom(tokenizer, HF_CACHE_DIR)
+    encoding_dp = dp_encode_bloom(input_str)
+    decoded_str = invert_dp_tokenize(encoding_dp)
+    assert decoded_str == input_str
+    assert len(encoding_dp) <= len(encoding_default)
+
+def test_bloom_tokenizer_space():
+    tokenizer = AutoTokenizer.from_pretrained("bigscience/bloom-3b", cache_dir=HF_CACHE_DIR, use_fast=False)
+    input_str = 'Ġ'
+    encoding_default = tokenizer.encode(input_str)
+
+    dp_encode_bloom, invert_dp_tokenize = dp_tokenize_bloom(tokenizer, HF_CACHE_DIR)
+    encoding_dp = dp_encode_bloom(input_str)
+    decoded_str = invert_dp_tokenize(encoding_dp)
+    assert decoded_str == input_str
+    assert len(encoding_dp) <= len(encoding_default)

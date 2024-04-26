@@ -1,6 +1,7 @@
+import json
 from bidict import bidict
 import ipdb
-from typing import List, Set
+from typing import List, Set, Dict
 from .dp_tokenize import compute_shortest_tokenizations, obtain_longest_token
 
 def merge_tokens(tokens, sep='Ġ'):
@@ -92,4 +93,91 @@ def dp_tokenize_llama(llama_tokenizer, pretokenize_option = 'llama'):
         #         decoded_tokens[i] = decoded_tokens[i].replace(space_token, ' ')
         # decoded_string = ''.join(decoded_tokens)
         # return decoded_string
+    return dp_tokenize, decode_dp_tokenization
+
+def dp_tokenize_bloom(bloom_tokenizer, HF_CACHE_DIR):
+    def get_merge_list(tokenizer_json_fname: str):
+        with open(tokenizer_json_fname, 'r') as f:
+            tokenizer_json = json.load(f)
+            merges = tokenizer_json['model']['merges']
+            return merges
+    
+    def get_token_to_index_map(tokenizer_json_fname) -> Dict[str, int]:
+        with open(tokenizer_json_fname, 'r') as f:
+            tokenizer_json = json.load(f)
+            vocab = tokenizer_json['model']['vocab']
+            return {token: index for index, token in enumerate(vocab)}
+
+    tokenizer_json_fname = f"{HF_CACHE_DIR}/models--bigscience--bloom-3b/snapshots/52bc5b43010b4844513826b8be3f78c7344c37d7/tokenizer.json"
+    merge_list = get_merge_list(tokenizer_json_fname)
+    vocab_to_index = bidict(get_token_to_index_map(tokenizer_json_fname))
+
+
+    token_to_source_merge = {}
+    for merge in merge_list:
+        a, b = merge.split()
+        token_to_source_merge[a + b] = (a, b)
+    
+    def unwind_to_base_tokenization(input_str: str) -> List[int]: 
+        """
+        Params:
+            input_str (str): String to get the base tokenization for.
+            vocab_token_to_index (Dict[str, int]): Mapping from token to index in the vocabulary.
+            vocab_merges (List[str]): List of merges in the vocabulary. Of the form "a b" where a and b are tokens.
+            tokenizer: Huggingface tokenizer object.
+        """
+        encoding = bloom_tokenizer.encode(input_str) # List[int]
+        # create an object token_to_source_merge. This will be a dictionary that maps a token (str) to the merge that created it (Tuple[str,str]).
+        base_tokens = []
+
+        def decompose(token: str) -> List[int]:
+            if token in token_to_source_merge:
+                a, b = token_to_source_merge[token]
+                return decompose(a) + decompose(b) 
+            else:
+                # base token
+                return [vocab_to_index[token]]
+
+        base_tokens = []
+        for token_ind in encoding:
+            token = bloom_tokenizer.convert_ids_to_tokens([token_ind])[0]
+            base_tokens.extend(decompose(token))
+        return base_tokens
+
+    def compute_shortest_tokenization_bloom(input_str):
+        token_inds = unwind_to_base_tokenization(input_str) # get the longest tokenization (i.e., encoding using the alphabet only)
+        tokens = bloom_tokenizer.convert_ids_to_tokens(token_inds) # 
+        return compute_shortest_tokenizations(tokens, vocab_to_index, False, "Ġ") # this is the DP algorithm
+    
+    # def min_tokens_for_string(tokens: List[str]):
+    #     _, shortest_length = compute_shortest_tokenization_bloom(tokens)
+    #     return shortest_length
+
+    def pretokenize(input_str):
+        pretokenized = bloom_tokenizer._tokenizer.pre_tokenizer.pre_tokenize_str(input_str)
+        return [pretokenized_block[0] for pretokenized_block in pretokenized]
+    
+    def dp_tokenize(input_str) -> List[int]:
+        pretokenized = pretokenize(input_str) # List[str]
+        selected_tokenizations = []
+
+        for pretokenized_seq in pretokenized: # iterate over the words in the sentence {input_str}
+            shortest_tokenizations, length = compute_shortest_tokenization_bloom(pretokenized_seq)  # compute the shortest tokenization for the word
+            selected_tokenization = obtain_longest_token(shortest_tokenizations)
+            selected_tokenizations.append(selected_tokenization)
+        
+        encoded_tokenization = []
+        for tokenization in selected_tokenizations:
+            for token in tokenization:
+                encoded_tokenization.append(vocab_to_index[token])
+        return encoded_tokenization
+
+    def decode_dp_tokenization(encoding: List[int]):
+        decoded_tokens = [vocab_to_index.inverse[token] for token in encoding]
+        decoded_string = ''.join(decoded_tokens)
+        return decoded_string
+
+    print("====")
+    print(unwind_to_base_tokenization('Ġ'))
+    ipdb.set_trace()
     return dp_tokenize, decode_dp_tokenization
