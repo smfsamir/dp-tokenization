@@ -145,7 +145,8 @@ def dp_tokenize_bloom(bloom_tokenizer, HF_CACHE_DIR):
         return base_tokens
 
     def compute_shortest_tokenization_bloom(input_str):
-        token_inds = unwind_to_base_tokenization(input_str) # get the longest tokenization (i.e., encoding using the alphabet only)
+        # token_inds = unwind_to_base_tokenization(input_str) # get the longest tokenization (i.e., encoding using the alphabet only)
+        token_inds = [vocab_to_index[c] for c in input_str]
         tokens = bloom_tokenizer.convert_ids_to_tokens(token_inds) # 
         return compute_shortest_tokenizations(tokens, vocab_to_index, False, "Ġ") # this is the DP algorithm
     
@@ -173,11 +174,8 @@ def dp_tokenize_bloom(bloom_tokenizer, HF_CACHE_DIR):
         return encoded_tokenization
 
     def decode_dp_tokenization(encoding: List[int]):
-        decoded_tokens = [vocab_to_index.inverse[token] for token in encoding]
-        decoded_string = ''.join(decoded_tokens)
-        return decoded_string
+        # decoded_tokens = [vocab_to_index.inverse[token] for token in encoding]
+        # decoded_string = ''.join(decoded_tokens)
+        return bloom_tokenizer.decode(encoding)
 
-    print("====")
-    print(unwind_to_base_tokenization('Ġ'))
-    ipdb.set_trace()
     return dp_tokenize, decode_dp_tokenization
