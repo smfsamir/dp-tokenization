@@ -47,6 +47,7 @@ def step_download_datasets(language_pair,
     # https://github.com/biomedical-translation-corpora/corpora
     # git clone the repo to the WM_SAVE_DIR using subprocess
     assert f"{WMT_SAVE_DIR}/29212094_en.txt" in os.listdir(WMT_SAVE_DIR), f"The biomed translation corpus project needs to be cloned to {WMT_SAVE_DIR}"
+    # TODO: I only loaded part of the dataset so far (May 2nd), we should load the whole thing
     return True
 
 def step_compare_dp_default_tokenization(dataset_path, 
