@@ -19,27 +19,6 @@ WMT_SAVE_DIR = os.getenv("WMT_DATASET_SAVE_DIR") # create .env file in root and 
 HF_CACHE_DIR = os.getenv("HF_CACHE_DIR") # create .env file in root and set this to whereever to save
 
 
-def get_merge_list(tokenizer_json_fname: str):
-    with open(tokenizer_json_fname, 'r') as f:
-        tokenizer_json = json.load(f)
-        merges = tokenizer_json['model']['merges']
-        return merges
-    
-def get_token_to_index_map(tokenizer_json_fname) -> Dict[str, int]:
-    with open(tokenizer_json_fname, 'r') as f:
-        tokenizer_json = json.load(f)
-        vocab = tokenizer_json['model']['vocab']
-        return {token: index for index, token in enumerate(vocab)}
-
-tokenizer_json_fname = "hf_cache/models--bigscience--bloom-3b/snapshots/52bc5b43010b4844513826b8be3f78c7344c37d7/tokenizer.json"
-merge_list = get_merge_list(tokenizer_json_fname)
-vocab_to_index = get_token_to_index_map(tokenizer_json_fname)
-
-token_to_source_merge = {}
-for merge in merge_list:
-    a, b = merge.split()
-    token_to_source_merge[a + b] = (a, b)
-
 def step_download_datasets(language_pair, 
                            **kwargs):
     """
