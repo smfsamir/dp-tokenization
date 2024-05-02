@@ -53,6 +53,10 @@ def step_compare_dp_default_tokenization(dataset_path,
         logger.error(msg)
         ipdb.set_trace()
 
+    # default_tokenization_strings = []
+    dp_token_lengths = []
+    default_token_lengths = []
+    lang_codes = []
     for sample_txt_fname in tqdm(os.listdir(dataset_path)):
         with open(f"{dataset_path}/{sample_txt_fname}") as f:
             txt = f.read().strip()
@@ -61,8 +65,18 @@ def step_compare_dp_default_tokenization(dataset_path,
             dp_tokenizer_length = len(dp_encoded_text)
             assert default_tokenizer_length >= dp_tokenizer_length, assert_action(f"DP tokenization is longer than default tokenization for {txt}")
             assert invert_dp_tokenize(dp_encoded_text) == txt, assert_action(f"DP tokenization is not reversible for {txt}")
+        lang_code = sample_txt_fname.split("_")[1].split(".")[0]
+        lang_codes.append(lang_code)
+        dp_token_lengths.append(dp_tokenizer_length)
+        default_token_lengths.append(default_tokenizer_length)
+    # TODO: fill this out
+    result_frame = pl.DataFrame({
+        'dp_token_lengths': dp_token_lengths,
+        'default_token_lengths': default_token_lengths,
+        'lang_codes': lang_codes
+    })
     ipdb.set_trace()
-
+    return 
 
 if __name__ == '__main__':
     steps = OrderedDict()
