@@ -32,7 +32,8 @@ def step_download_datasets(language_pair,
 
 def step_compare_dp_default_tokenization(dataset_path, 
                                         language_pair: str,
-                                         model_tokenizer) -> pl.DataFrame:
+                                         model_tokenizer, 
+                                         **kwargs) -> pl.DataFrame:
     """
 
     Returns a dataframe containing the same number of
