@@ -1,5 +1,6 @@
 import json
 from dotenv import load_dotenv
+import ipdb
 import os
 from typing import List, Dict
 import polars as pl
@@ -7,11 +8,16 @@ import subprocess
 from flowmason import SingletonStep, MapReduceStep
 from collections import OrderedDict
 from transformers import AutoTokenizer, WhisperTokenizer
+import loguru
 
+from packages.tokenizer_utils import dp_tokenize_llama, dp_tokenize_bloom
+
+logger = loguru.logger
 
 load_dotenv()
 WMT_SAVE_DIR = os.getenv("WMT_DATASET_SAVE_DIR") # create .env file in root and set this to whereever to save
 HF_CACHE_DIR = os.getenv("HF_CACHE_DIR") # create .env file in root and set this to whereever to save
+
 
 def get_merge_list(tokenizer_json_fname: str):
     with open(tokenizer_json_fname, 'r') as f:
@@ -40,39 +46,8 @@ def step_download_datasets(language_pair,
     """
     # https://github.com/biomedical-translation-corpora/corpora
     # git clone the repo to the WM_SAVE_DIR using subprocess
-    assert f"{WMT_SAVE_DIR}/biomedical-translation-corpora" in os.listdir(WMT_SAVE_DIR), f"The biomed translation corpus project needs to be cloned to {WMT_SAVE_DIR}"
+    assert f"{WMT_SAVE_DIR}/29212094_en.txt" in os.listdir(WMT_SAVE_DIR), f"The biomed translation corpus project needs to be cloned to {WMT_SAVE_DIR}"
     return True
-
-def unwind_to_base_tokenization(tokenizer, input_str: str) -> List[int]: 
-    """
-    Params:
-        input_str (str): String to get the base tokenization for.
-        vocab_token_to_index (Dict[str, int]): Mapping from token to index in the vocabulary.
-        vocab_merges (List[str]): List of merges in the vocabulary. Of the form "a b" where a and b are tokens.
-        tokenizer: Huggingface tokenizer object.
-    """
-    encoding = tokenizer.encode(input_str) # List[int]
-    # create an object token_to_source_merge. This will be a dictionary that maps a token (str) to the merge that created it (Tuple[str,str]).
-    base_tokens = []
-
-    def decompose(token: str) -> List[int]:
-        if token in token_to_source_merge:
-            a, b = token_to_source_merge[token]
-            return decompose(a) + decompose(b) 
-        else:
-            # base token
-            return [vocab_to_index[token]]
-
-    base_tokens = []
-    for token_ind in encoding:
-        token = tokenizer.convert_ids_to_tokens([token_ind])[0]
-        base_tokens.extend(decompose(token))
-    return base_tokens
-
-def compute_shortest_tokenization_bloom(input_str):
-    token_inds = unwind_to_base_tokenization(input_str)
-    tokens = tokenizer.convert_ids_to_tokens(token_inds)
-    return min_tokens_for_string(tokens)
 
 def step_compare_dp_default_tokenization(dataset_path, 
                                         language_pair: str,
@@ -88,8 +63,22 @@ def step_compare_dp_default_tokenization(dataset_path,
     - default tokenization strings (List[str]).
     - DP tokenization strings (List[str]).
     """
-    tokenizer = AutoTokenizer.from_pretrained("bigscience/bloom-3b", cache_dir=HF_CACHE_DIR, use_fast=False)
-    pass
+    tokenizer = AutoTokenizer.from_pretrained(model_tokenizer, cache_dir=HF_CACHE_DIR)
+    dp_encode_bloom, invert_dp_tokenize = dp_tokenize_bloom(tokenizer, HF_CACHE_DIR)
+
+    def assert_action(msg):
+        logger.error(msg)
+        ipdb.set_trace()
+
+    for sample_txt_fname in os.listdir(dataset_path):
+        with open(f"{dataset_path}/{sample_txt_fname}") as f:
+            txt = f.read().strip()
+            default_tokenizer_length = len(tokenizer.encode(txt))
+            dp_encoded_text = dp_encode_bloom(txt)
+            dp_tokenizer_length = len(dp_encoded_text)
+            assert default_tokenizer_length >= dp_tokenizer_length, assert_action(f"DP tokenization is longer than default tokenization for {txt}")
+            assert invert_dp_tokenize(dp_encoded_text) == txt, assert_action(f"DP tokenization is not reversible for {txt}")
+    ipdb.set_trace()
 
 
 if __name__ == '__main__':
@@ -100,7 +89,7 @@ if __name__ == '__main__':
     })
 
     steps['compare_dp_default_tokenization'] = SingletonStep(step_compare_dp_default_tokenization, {
-        'dataset_path': f"{WMT_SAVE_DIR}/biomedical-translation-corpora/data/en-de/train.en",
+        'dataset_path': f"{WMT_SAVE_DIR}",
         'language_pair': 'en-de',
-        'model_tokenizer': 'bloomz/mbart-large-cc25'
+        'model_tokenizer': 'bigscience/bloom-3b'
     })
