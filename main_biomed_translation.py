@@ -5,12 +5,13 @@ import os
 from typing import List, Dict
 import polars as pl
 import subprocess
-from flowmason import SingletonStep, MapReduceStep
+from flowmason import SingletonStep, MapReduceStep, conduct
 from collections import OrderedDict
 from transformers import AutoTokenizer, WhisperTokenizer
 import loguru
 
 from packages.tokenizer_utils import dp_tokenize_llama, dp_tokenize_bloom
+from packages.constants import SCRATCH_DIR
 
 logger = loguru.logger
 
@@ -73,3 +74,6 @@ if __name__ == '__main__':
         'language_pair': 'en-de',
         'model_tokenizer': 'bigscience/bloom-3b'
     })
+    # conduct()
+    conduct(os.path.join(SCRATCH_DIR, "tokenization_cache"), steps, "tokenization_logs")
+
