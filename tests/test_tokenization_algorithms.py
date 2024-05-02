@@ -176,5 +176,4 @@ def test_bloom_tokenizer_long_string():
     default_encoding = tokenizer.encode(s)
     print(f"Default encoding length: {len(default_encoding)}")
     print(f"DP encoding length: {len(encoding_dp)}")
-
     assert decoded_str == s
