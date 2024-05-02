@@ -9,6 +9,7 @@ from flowmason import SingletonStep, MapReduceStep, conduct
 from collections import OrderedDict
 from transformers import AutoTokenizer, WhisperTokenizer
 import loguru
+from tqdm import tqdm
 
 from packages.tokenizer_utils import dp_tokenize_llama, dp_tokenize_bloom
 from packages.constants import SCRATCH_DIR
@@ -52,7 +53,7 @@ def step_compare_dp_default_tokenization(dataset_path,
         logger.error(msg)
         ipdb.set_trace()
 
-    for sample_txt_fname in os.listdir(dataset_path):
+    for sample_txt_fname in tqdm(os.listdir(dataset_path)):
         with open(f"{dataset_path}/{sample_txt_fname}") as f:
             txt = f.read().strip()
             default_tokenizer_length = len(tokenizer.encode(txt))
