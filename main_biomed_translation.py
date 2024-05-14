@@ -3,10 +3,12 @@ from dotenv import load_dotenv
 import ipdb
 import os
 from typing import List, Dict
+import pandas as pd
 import polars as pl
 import subprocess
 from flowmason import SingletonStep, MapReduceStep, conduct
 from collections import OrderedDict
+from datasets import Dataset
 from transformers import AutoTokenizer, WhisperTokenizer
 import loguru
 from tqdm import tqdm
@@ -78,6 +80,47 @@ def step_compare_dp_default_tokenization(dataset_path,
     ipdb.set_trace()
     return 
 
+
+def step_train_model(
+    model_name: str,
+    dataset_path: str,
+    language_pair: str,
+    mapping_algorithm: str, 
+    **kwargs
+):
+    # TODO
+    tokenizer = get_tokenizer()
+    def apply_tokenizer():
+        def _tokenize(example):
+            source = example["source"]
+            target = example["target"]
+            tokenized_dict = tokenizer(source)#, max_length=30, truncation=True)
+            tokenized_dict["labels"] = tokenizer(target)["input_ids"]#, max_length=30, truncation=True)["input_ids"]
+            # tokenized_dict['label'] = label_2_id[example[label_column][0]]
+            return tokenized_dict
+        return _tokenize
+    
+    filenames = set([os.basename(fn) for fn in tqdm(os.listdir(dataset_path))])
+    SRC_LANG = "en"
+    TGT_LANG = "de"
+    sources = []
+    targets = []
+    for base_filename in tqdm(filenames):
+        sample_txt_srcname = base_filename + f".{SRC_LANG}"
+        sample_txt_tgtname = base_filename + f".{TGT_LANG}"
+        with open(f"{dataset_path}/{sample_txt_srcname}") as f:
+            sources.append(f.read().strip())
+        with open(f"{dataset_path}/{sample_txt_tgtname}") as f:
+            targets.append(f.read().strip())
+    translation_df = pd.DataFrame({
+        "source": sources,
+        "target": targets,
+    })
+    translation_dataset = Dataset.from_pandas(translation_df)
+    translation_dataset.map(apply_tokenizer)
+
+
+
 if __name__ == '__main__':
     steps = OrderedDict()
     steps['download_biomed_dataset'] = SingletonStep(step_download_datasets, {
@@ -91,5 +134,14 @@ if __name__ == '__main__':
         'model_tokenizer': 'bigscience/bloom-3b', 
         'version': '001'
     })
+    steps['train_model'] = SingletonStep(
+        step_train_model, {
+            'model_name': 'bigscience/bloomz-560m',
+            'dataset_path': f"{WMT_SAVE_DIR}",
+            'language_pair': 'en-de',
+            'mapping_algorithm': 'default',
+            'version': '001',
+        }
+    )
     # conduct()
     conduct(os.path.join(SCRATCH_DIR, "tokenization_cache"), steps, "tokenization_logs")
