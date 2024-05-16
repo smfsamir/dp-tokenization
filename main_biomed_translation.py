@@ -165,8 +165,8 @@ def step_train_model(
     targets = []
 
     for base_filename in tqdm(filenames):
-        sample_txt_srcname = base_filename + f"_{SRC_LANG}"
-        sample_txt_tgtname = base_filename + f"_{TGT_LANG}"
+        sample_txt_srcname = base_filename + f"_{SRC_LANG}.txt"
+        sample_txt_tgtname = base_filename + f"_{TGT_LANG}.txt"
         with open(f"{dataset_path}/{sample_txt_srcname}") as f:
             sources.append(f.read().strip())
         with open(f"{dataset_path}/{sample_txt_tgtname}") as f:
