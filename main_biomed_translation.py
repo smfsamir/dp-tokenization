@@ -1,3 +1,4 @@
+import os
 import json
 from dotenv import load_dotenv
 import ipdb
@@ -157,7 +158,7 @@ def step_train_model(
         result = {k: round(v, 4) for k, v in result.items()}
         return result
     
-    filenames = set([os.basename(fn) for fn in tqdm(os.listdir(dataset_path))])
+    filenames = set([os.path.basename(fn) for fn in tqdm(os.listdir(dataset_path))])
     SRC_LANG = "en"
     TGT_LANG = "de"
     sources = []
