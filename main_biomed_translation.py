@@ -197,7 +197,7 @@ def step_train_model(
         generation_max_length=128,
     )
     data_collator = DataCollatorForLanguageModeling(
-        default_tokenizer, padding="max_length", max_length=1024, mlm=False
+        default_tokenizer, max_length=1024, mlm=False
     )
     trainer = transformers.Seq2SeqTrainer(
         model=model,
