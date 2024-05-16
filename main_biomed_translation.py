@@ -99,8 +99,10 @@ def get_tokenizer(default_tokenizer, mapping_algorithm):
 class ShortcutDataCollatorForSeq2Seq(DataCollatorForSeq2Seq):
 
     def __call__(self, features, return_tensors=None):
-        ipdb.set_trace()
+        print(features)
         padded_features = super().__call__(features, return_tensors)
+        print(padded_features)
+        raise Exception("Check that the features and padded features match (modulo the padding)")
         return padded_features
 
 
