@@ -195,7 +195,7 @@ def step_train_model(
         predict_with_generate=True,
         generation_max_length=128,
     )
-    data_collator = DataCollatorForLanguageModeling(
+    data_collator = ShortcutDataCollatorForSeq2Seq(
         default_tokenizer, mlm=False
     )
     trainer = transformers.Seq2SeqTrainer(
