@@ -217,12 +217,12 @@ if __name__ == '__main__':
         'version': '001'
     })
 
-    steps['compare_dp_default_tokenization'] = SingletonStep(step_compare_dp_default_tokenization, {
-        'dataset_path': f"{WMT_SAVE_DIR}",
-        'language_pair': 'en-de',
-        'model_tokenizer': 'bigscience/bloom-3b', 
-        'version': '001'
-    })
+    # steps['compare_dp_default_tokenization'] = SingletonStep(step_compare_dp_default_tokenization, {
+    #     'dataset_path': f"{WMT_SAVE_DIR}",
+    #     'language_pair': 'en-de',
+    #     'model_tokenizer': 'bigscience/bloom-3b', 
+    #     'version': '001'
+    # })
     steps['train_model'] = SingletonStep(
         step_train_model, {
             'model_name': 'bigscience/bloomz-560m',
