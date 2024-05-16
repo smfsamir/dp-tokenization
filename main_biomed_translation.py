@@ -12,7 +12,7 @@ from collections import OrderedDict
 from datasets import Dataset
 import transformers
 # import DataCollatorForSeq2Seq
-from transformers import DataCollatorForSeq2Seq
+from transformers import DataCollatorForLanguageModeling
 from transformers import AutoTokenizer, WhisperTokenizer, AutoModelForCausalLM
 import evaluate
 import numpy as np
@@ -98,7 +98,7 @@ def get_tokenizer(default_tokenizer, mapping_algorithm):
         return default_tokenizer.encode
 
 
-class ShortcutDataCollatorForSeq2Seq(DataCollatorForSeq2Seq):
+class ShortcutDataCollatorForSeq2Seq(DataCollatorForLanguageModeling):
 
     def __call__(self, features, return_tensors=None):
         print(features)
@@ -196,7 +196,7 @@ def step_train_model(
         predict_with_generate=True,
         generation_max_length=128,
     )
-    data_collator = DataCollatorForSeq2Seq(
+    data_collator = DataCollatorForLanguageModeling(
         default_tokenizer, padding="max_length", max_length=1024
     )
     trainer = transformers.Seq2SeqTrainer(
