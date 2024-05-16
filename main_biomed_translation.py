@@ -102,6 +102,7 @@ class ShortcutDataCollatorForSeq2Seq(DataCollatorForLanguageModeling):
 
     def __call__(self, features, return_tensors=None):
         print(features)
+        ipdb.set_trace()
         padded_features = super().__call__(features, return_tensors)
         print(padded_features)
         raise Exception("Check that the features and padded features match (modulo the padding)")
