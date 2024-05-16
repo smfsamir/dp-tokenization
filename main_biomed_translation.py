@@ -9,7 +9,11 @@ import subprocess
 from flowmason import SingletonStep, MapReduceStep, conduct
 from collections import OrderedDict
 from datasets import Dataset
+import transformers
+from transformers.data.data_collator import DataCollatorForSeq2Seq
 from transformers import AutoTokenizer, WhisperTokenizer
+import evaluate
+import numpy as np
 import loguru
 from tqdm import tqdm
 
@@ -81,15 +85,37 @@ def step_compare_dp_default_tokenization(dataset_path,
     return 
 
 
+def get_tokenizer(default_tokenizer, mapping_algorithm):
+    if mapping_algorithm == "dp":
+        # TODO: Add an assertion to be sure inverting recovers the original text.
+        dp_encode_bloom, invert_dp_tokenize = dp_tokenize_bloom(
+            default_tokenizer, HF_CACHE_DIR
+        )
+        return dp_encode_bloom
+    else:
+        return default_tokenizer.encode
+
+
+class ShortcutDataCollatorForSeq2Seq(DataCollatorForSeq2Seq):
+
+    def __call__(self, features, return_tensors=None):
+        ipdb.set_trace()
+        padded_features = super().__call__(features, return_tensors)
+        return padded_features
+
+
 def step_train_model(
     model_name: str,
     dataset_path: str,
     language_pair: str,
-    mapping_algorithm: str, 
+    mapping_algorithm: str,
+    output_dir: str,
     **kwargs
 ):
-    # TODO
-    tokenizer = get_tokenizer()
+    # Get the base tokenizer
+    default_tokenizer = AutoTokenizer.from_pretrained(model_name, cache_dir=HF_CACHE_DIR)
+    tokenizer = get_tokenizer(default_tokenizer, mapping_algorithm)
+
     def apply_tokenizer():
         def _tokenize(example):
             source = example["source"]
@@ -99,6 +125,35 @@ def step_train_model(
             # tokenized_dict['label'] = label_2_id[example[label_column][0]]
             return tokenized_dict
         return _tokenize
+    
+    def postprocess_text(preds, labels):
+        preds = [pred.strip() for pred in preds]
+        labels = [[label.strip()] for label in labels]
+        return preds, labels
+
+    metric = evaluate.load("sacrebleu")
+    def _compute_metrics(eval_preds):
+        preds, labels = eval_preds
+        print("Eval Sample prediction and labels:")
+        print(preds[:2],labels[:2])
+        if isinstance(preds, tuple):
+            preds = preds[0]
+        preds = np.where(preds != -100, preds, default_tokenizer.pad_token_id)
+        decoded_preds = default_tokenizer.batch_decode(preds, skip_special_tokens=True)
+        print(decoded_preds[:2])
+
+        labels = np.where(labels != -100, labels, default_tokenizer.pad_token_id)
+        decoded_labels = default_tokenizer.batch_decode(labels, skip_special_tokens=True)
+        print(decoded_labels[:2])
+        decoded_preds, decoded_labels = postprocess_text(decoded_preds, decoded_labels)
+
+        result = metric.compute(predictions=decoded_preds, references=decoded_labels)
+        result = {"bleu": result["score"]}
+
+        prediction_lens = [np.count_nonzero(pred != default_tokenizer.pad_token_id) for pred in preds]
+        result["gen_len"] = np.mean(prediction_lens)
+        result = {k: round(v, 4) for k, v in result.items()}
+        return result
     
     filenames = set([os.basename(fn) for fn in tqdm(os.listdir(dataset_path))])
     SRC_LANG = "en"
@@ -117,8 +172,42 @@ def step_train_model(
         "target": targets,
     })
     translation_dataset = Dataset.from_pandas(translation_df)
-    translation_dataset.map(apply_tokenizer)
-
+    translation_dataset = translation_dataset.map(apply_tokenizer)
+    model = transformers.AutoModelForSeq2SeqLM.from_pretrained(model_name)
+    training_args = transformers.Seq2SeqTrainingArguments(
+        report_to="wandb",
+        run_name=f"sanity_check-{SRC_LANG}-{TGT_LANG}",
+        output_dir=output_dir,
+        do_eval=True,
+        logging_steps=50,
+        evaluation_strategy="steps",
+        eval_steps=20,
+        learning_rate=0.001,
+        warmup_steps=5,
+        per_device_train_batch_size=8,
+        per_device_eval_batch_size=8,
+        gradient_accumulation_steps=0,
+        save_total_limit=3,
+        num_train_epochs=10,
+        predict_with_generate=True,
+        generation_max_length=128,
+    )
+    data_collator = DataCollatorForSeq2Seq(
+        default_tokenizer, padding="max_length", max_length=1024
+    )
+    trainer = transformers.Seq2SeqTrainer(
+        model=model,
+        args=training_args,
+        train_dataset=translation_dataset,
+        eval_dataset=translation_dataset,
+        #tokenizer=tokenizer, #TODO: what interface does tokenizer need to implement?
+        data_collator=data_collator,
+        compute_metrics=_compute_metrics,
+    )
+    print(trainer)
+    print("Training")
+    print("Parallel mode: ", trainer.args.parallel_mode)
+    trainer.train()
 
 
 if __name__ == '__main__':
