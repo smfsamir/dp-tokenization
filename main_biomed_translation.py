@@ -190,7 +190,6 @@ def step_train_model(
         warmup_steps=5,
         per_device_train_batch_size=8,
         per_device_eval_batch_size=8,
-        gradient_accumulation_steps=0,
         save_total_limit=3,
         num_train_epochs=10,
         predict_with_generate=True,
