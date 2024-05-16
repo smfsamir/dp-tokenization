@@ -158,14 +158,15 @@ def step_train_model(
         result = {k: round(v, 4) for k, v in result.items()}
         return result
     
-    filenames = set([os.path.basename(fn) for fn in tqdm(os.listdir(dataset_path))])
+    filenames = set([os.path.basename(fn).split('_')[0] for fn in tqdm(os.listdir(dataset_path))])
     SRC_LANG = "en"
     TGT_LANG = "de"
     sources = []
     targets = []
+
     for base_filename in tqdm(filenames):
-        sample_txt_srcname = base_filename + f".{SRC_LANG}"
-        sample_txt_tgtname = base_filename + f".{TGT_LANG}"
+        sample_txt_srcname = base_filename + f"_{SRC_LANG}"
+        sample_txt_tgtname = base_filename + f"_{TGT_LANG}"
         with open(f"{dataset_path}/{sample_txt_srcname}") as f:
             sources.append(f.read().strip())
         with open(f"{dataset_path}/{sample_txt_tgtname}") as f:
