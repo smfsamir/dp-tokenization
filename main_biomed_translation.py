@@ -119,15 +119,15 @@ def step_train_model(
     default_tokenizer = AutoTokenizer.from_pretrained(model_name, cache_dir=HF_CACHE_DIR)
     tokenizer = get_tokenizer(default_tokenizer, mapping_algorithm)
 
-    def apply_tokenizer():
-        def _tokenize(example):
-            source = example["source"]
-            target = example["target"]
-            tokenized_dict = tokenizer(source)#, max_length=30, truncation=True)
-            tokenized_dict["labels"] = tokenizer(target)["input_ids"]#, max_length=30, truncation=True)["input_ids"]
-            # tokenized_dict['label'] = label_2_id[example[label_column][0]]
-            return tokenized_dict
-        return _tokenize
+    def apply_tokenizer(example):
+        # def _tokenize(example):
+        source = example["source"]
+        target = example["target"]
+        tokenized_dict = tokenizer(source)#, max_length=30, truncation=True)
+        tokenized_dict["labels"] = tokenizer(target)["input_ids"]#, max_length=30, truncation=True)["input_ids"]
+        # tokenized_dict['label'] = label_2_id[example[label_column][0]]
+        return tokenized_dict
+        # return _tokenize
     
     def postprocess_text(preds, labels):
         preds = [pred.strip() for pred in preds]
