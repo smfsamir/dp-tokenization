@@ -11,8 +11,9 @@ from flowmason import SingletonStep, MapReduceStep, conduct
 from collections import OrderedDict
 from datasets import Dataset
 import transformers
-from transformers.data.data_collator import DataCollatorForSeq2Seq
-from transformers import AutoTokenizer, WhisperTokenizer
+# import DataCollatorForSeq2Seq
+from transformers import DataCollatorForSeq2Seq
+from transformers import AutoTokenizer, WhisperTokenizer, AutoModelForCausalLM
 import evaluate
 import numpy as np
 import loguru
@@ -176,7 +177,7 @@ def step_train_model(
     })
     translation_dataset = Dataset.from_pandas(translation_df)
     translation_dataset = translation_dataset.map(apply_tokenizer)
-    model = transformers.AutoModelForSeq2SeqLM.from_pretrained(model_name, cache_dir=HF_CACHE_DIR)
+    model = AutoModelForCausalLM.from_pretrained(model_name, cache_dir=HF_CACHE_DIR)
     training_args = transformers.Seq2SeqTrainingArguments(
         report_to="wandb",
         run_name=f"sanity_check-{SRC_LANG}-{TGT_LANG}",
