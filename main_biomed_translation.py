@@ -173,11 +173,11 @@ def step_train_model(
     })
     translation_dataset = Dataset.from_pandas(translation_df)
     translation_dataset = translation_dataset.map(apply_tokenizer)
-    model = transformers.AutoModelForSeq2SeqLM.from_pretrained(model_name)
+    model = transformers.AutoModelForSeq2SeqLM.from_pretrained(model_name, cache_dir=HF_CACHE_DIR)
     training_args = transformers.Seq2SeqTrainingArguments(
         report_to="wandb",
         run_name=f"sanity_check-{SRC_LANG}-{TGT_LANG}",
-        output_dir=output_dir,
+        output_dir=f"{output_dir}/bloom_dp_560m",
         do_eval=True,
         logging_steps=50,
         evaluation_strategy="steps",
@@ -229,6 +229,7 @@ if __name__ == '__main__':
             'dataset_path': f"{WMT_SAVE_DIR}",
             'language_pair': 'en-de',
             'mapping_algorithm': 'default',
+            'output_dir': SCRATCH_DIR,
             'version': '001',
         }
     )
