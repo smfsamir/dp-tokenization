@@ -127,6 +127,7 @@ class ShortcutDataCollatorForSeq2Seq(DataCollatorForLanguageModeling):
             'input_ids': feature_tensors,
             'labels': label_tensors
         }
+        ipdb.set_trace()
         return padded_features
 
 
