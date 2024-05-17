@@ -1,4 +1,7 @@
+import torch
 import os
+from torch.nn.functional import pad
+from torch.nn.utils.rnn import pad_sequence
 import json
 from dotenv import load_dotenv
 import ipdb
@@ -102,10 +105,35 @@ class ShortcutDataCollatorForSeq2Seq(DataCollatorForLanguageModeling):
 
     def __call__(self, features, return_tensors=None):
         print(features)
-        ipdb.set_trace()
-        padded_features = super().__call__(features, return_tensors)
-        print(padded_features)
-        raise Exception("Check that the features and padded features match (modulo the padding)")
+        # right now, we have List[Dict[str, List[int]].
+        # We need to convert this to a Dict[str, List[List[int]]]
+        # features = {k: [f[k] for f in features] for k in features[0]}
+        # write the comprehension as a nested loop
+        features_new = {}
+        for k in features[0]:
+            # features[k] = [f[k] for f in features]
+            features_new[k] = []
+            for f in features:
+                features_new[k].append(f[k])
+        tensors = []
+        for feature in features_new['input_ids']:
+            tensors.append(torch.Tensor(feature))
+        feature_tensors = pad_sequence(tensors, padding_value=self.tokenizer.pad_token_id) 
+        # get label_tensors
+        tensors = []
+        for feature in features_new['labels']:
+            tensors.append(torch.Tensor(feature))
+        label_tensors = pad_sequence(tensors, padding_value=self.tokenizer.pad_token_id)
+
+        # pad the features and labels
+        # features_new['input_ids'] = pad(features_new['input_ids'], padding_value=self.tokenizer.pad_token_id)
+        # features_new['input_ids'] = pad_sequence(features_new['input_ids'], padding_value=self.tokenizer.pad_token_id)
+        # pad_sequence(tensors,batch_first=True, padding_value=self.tokenizer.pad_token_id)
+        # ipdb.set_trace()
+        # # add labels
+        # padded_features = super(DataCollatorForLanguageModeling, self).__call__(features_new, return_tensors)
+        # print(padded_features)
+        # raise Exception("Check that the features and padded features match (modulo the padding)")
         return padded_features
 
 
