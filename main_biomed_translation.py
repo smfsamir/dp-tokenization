@@ -104,7 +104,6 @@ def get_tokenizer(default_tokenizer, mapping_algorithm):
 class ShortcutDataCollatorForSeq2Seq(DataCollatorForLanguageModeling):
 
     def __call__(self, features, return_tensors=None):
-        print(features)
         # right now, we have List[Dict[str, List[int]].
         # We need to convert this to a Dict[str, List[List[int]]]
         # features = {k: [f[k] for f in features] for k in features[0]}
@@ -124,16 +123,10 @@ class ShortcutDataCollatorForSeq2Seq(DataCollatorForLanguageModeling):
         for feature in features_new['labels']:
             tensors.append(torch.Tensor(feature))
         label_tensors = pad_sequence(tensors, padding_value=self.tokenizer.pad_token_id)
-
-        # pad the features and labels
-        # features_new['input_ids'] = pad(features_new['input_ids'], padding_value=self.tokenizer.pad_token_id)
-        # features_new['input_ids'] = pad_sequence(features_new['input_ids'], padding_value=self.tokenizer.pad_token_id)
-        # pad_sequence(tensors,batch_first=True, padding_value=self.tokenizer.pad_token_id)
-        # ipdb.set_trace()
-        # # add labels
-        # padded_features = super(DataCollatorForLanguageModeling, self).__call__(features_new, return_tensors)
-        # print(padded_features)
-        # raise Exception("Check that the features and padded features match (modulo the padding)")
+        padded_features = {
+            'input_ids': feature_tensors,
+            'labels': label_tensors
+        }
         return padded_features
 
 
