@@ -116,13 +116,13 @@ class ShortcutDataCollatorForSeq2Seq(DataCollatorForLanguageModeling):
                 features_new[k].append(f[k])
         tensors = []
         for feature in features_new['input_ids']:
-            ipdb.set_trace()
-            tensors.append(torch.Tensor(feature, dtype=torch.int64))
+            ipdb.set_trace() # TODO: figure out how to create a token tensor that is an integer type.
+            tensors.append(torch.Tensor(feature).int())
         feature_tensors = pad_sequence(tensors, padding_value=self.tokenizer.pad_token_id).to('cuda')
         # get label_tensors
         tensors = []
         for feature in features_new['labels']:
-            tensors.append(torch.Tensor(feature, dtype=torch.int64))
+            tensors.append(torch.Tensor(feature).int())
         label_tensors = pad_sequence(tensors, padding_value=self.tokenizer.pad_token_id).to('cuda')
         padded_features = {
             'input_ids': feature_tensors,
