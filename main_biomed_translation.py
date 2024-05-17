@@ -117,17 +117,17 @@ class ShortcutDataCollatorForSeq2Seq(DataCollatorForLanguageModeling):
         tensors = []
         for feature in features_new['input_ids']:
             tensors.append(torch.Tensor(feature))
-        feature_tensors = pad_sequence(tensors, padding_value=self.tokenizer.pad_token_id) 
+        feature_tensors = pad_sequence(tensors, padding_value=self.tokenizer.pad_token_id).to('cuda')
         # get label_tensors
         tensors = []
         for feature in features_new['labels']:
             tensors.append(torch.Tensor(feature))
-        label_tensors = pad_sequence(tensors, padding_value=self.tokenizer.pad_token_id)
+        label_tensors = pad_sequence(tensors, padding_value=self.tokenizer.pad_token_id).to('cuda')
         padded_features = {
             'input_ids': feature_tensors,
             'labels': label_tensors
         }
-        return padded_features.to('cuda')
+        return padded_features
 
 
 def step_train_model(
