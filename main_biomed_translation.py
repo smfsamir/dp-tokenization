@@ -127,7 +127,7 @@ class ShortcutDataCollatorForSeq2Seq(DataCollatorForLanguageModeling):
             'input_ids': feature_tensors,
             'labels': label_tensors
         }
-        return padded_features
+        return padded_features.to('cuda')
 
 
 def step_train_model(
