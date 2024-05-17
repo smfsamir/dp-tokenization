@@ -199,7 +199,7 @@ def step_train_model(
     })
     translation_dataset = Dataset.from_pandas(translation_df)
     translation_dataset = translation_dataset.map(apply_tokenizer)
-    model = AutoModelForCausalLM.from_pretrained(model_name, cache_dir=HF_CACHE_DIR)
+    model = AutoModelForCausalLM.from_pretrained(model_name, cache_dir=HF_CACHE_DIR).to('cuda')
     training_args = transformers.TrainingArguments(
         report_to="wandb",
         run_name=f"sanity_check-{SRC_LANG}-{TGT_LANG}",
