@@ -200,7 +200,7 @@ def step_train_model(
     translation_dataset = Dataset.from_pandas(translation_df)
     translation_dataset = translation_dataset.map(apply_tokenizer)
     model = AutoModelForCausalLM.from_pretrained(model_name, cache_dir=HF_CACHE_DIR)
-    training_args = transformers.Seq2SeqTrainingArguments(
+    training_args = transformers.TrainingArguments(
         report_to="wandb",
         run_name=f"sanity_check-{SRC_LANG}-{TGT_LANG}",
         output_dir=f"{output_dir}/bloom_dp_560m",
@@ -214,20 +214,20 @@ def step_train_model(
         per_device_eval_batch_size=8,
         save_total_limit=3,
         num_train_epochs=10,
-        predict_with_generate=True,
-        generation_max_length=128,
+        # predict_with_generate=True,
+        # generation_max_length=128,
     )
     data_collator = ShortcutDataCollatorForSeq2Seq(
         default_tokenizer, mlm=False
     )
-    trainer = transformers.Seq2SeqTrainer(
+    trainer = transformers.Trainer(
         model=model,
         args=training_args,
         train_dataset=translation_dataset,
         eval_dataset=translation_dataset,
         #tokenizer=tokenizer, #TODO: what interface does tokenizer need to implement?
         data_collator=data_collator,
-        compute_metrics=_compute_metrics,
+        compute_metrics=_compute_metrics
     )
     print(trainer)
     print("Training")
