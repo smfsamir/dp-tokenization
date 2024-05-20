@@ -194,8 +194,8 @@ def step_train_model(
         "source": sources,
         "target": targets,
     })
-    train_translation_dataset = Dataset.from_pandas(translation_df.head(80))
-    eval_translation_dataset = Dataset.from_pandas(translation_df.tail(20))
+    train_translation_dataset = Dataset.from_pandas(translation_df.head(90))
+    eval_translation_dataset = Dataset.from_pandas(translation_df.tail(10))
     train_translation_dataset = train_translation_dataset.map(apply_tokenizer)
     eval_translation_dataset = eval_translation_dataset.map(apply_tokenizer)
     model = AutoModelForCausalLM.from_pretrained(model_name, cache_dir=HF_CACHE_DIR).to('cuda')
