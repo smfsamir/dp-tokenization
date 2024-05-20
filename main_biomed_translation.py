@@ -194,8 +194,10 @@ def step_train_model(
         "source": sources,
         "target": targets,
     })
-    translation_dataset = Dataset.from_pandas(translation_df)
-    translation_dataset = translation_dataset.map(apply_tokenizer)
+    train_translation_dataset = Dataset.from_pandas(translation_df.head(80))
+    eval_translation_dataset = Dataset.from_pandas(translation_df.tail(20))
+    train_translation_dataset = train_translation_dataset.map(apply_tokenizer)
+    eval_translation_dataset = eval_translation_dataset.map(apply_tokenizer)
     model = AutoModelForCausalLM.from_pretrained(model_name, cache_dir=HF_CACHE_DIR).to('cuda')
     training_args = transformers.TrainingArguments(
         report_to="wandb",
@@ -220,12 +222,11 @@ def step_train_model(
     data_collator = ShortcutDataCollatorForSeq2Seq(
         default_tokenizer, mlm=False
     )
-    ipdb.set_trace()
     trainer = transformers.Trainer(
         model=model,
         args=training_args,
-        train_dataset=translation_dataset,
-        eval_dataset=translation_dataset[1,2,3,4,5],
+        train_dataset=train_translation_dataset,
+        eval_dataset=eval_translation_dataset,
         #tokenizer=tokenizer, #TODO: what interface does tokenizer need to implement?
         data_collator=data_collator,
         compute_metrics=_compute_metrics
