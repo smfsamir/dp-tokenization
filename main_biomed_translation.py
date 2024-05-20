@@ -203,6 +203,7 @@ def step_train_model(
         output_dir=f"{output_dir}/bloom_dp_560m",
         gradient_checkpointing=True,
         do_eval=True,
+        fp16=True,
         logging_steps=50,
         evaluation_strategy="steps",
         eval_steps=20,
