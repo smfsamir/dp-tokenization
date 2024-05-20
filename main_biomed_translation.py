@@ -205,8 +205,8 @@ def step_train_model(
         eval_steps=20,
         learning_rate=0.001,
         warmup_steps=5,
-        per_device_train_batch_size=8,
-        per_device_eval_batch_size=8,
+        per_device_train_batch_size=2,
+        per_device_eval_batch_size=2,
         save_total_limit=3,
         num_train_epochs=10,
         dataloader_pin_memory=False
