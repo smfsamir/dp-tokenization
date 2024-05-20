@@ -110,16 +110,17 @@ class ShortcutDataCollatorForSeq2Seq(DataCollatorForLanguageModeling):
             input_ids.append(torch.Tensor(datapoint['input_ids'] + datapoint['labels']).int())
             # input_ids.append(torch.Tensor(datapoint['input_ids'] + datapoint['labels']))
         input_ids = pad_sequence(input_ids, padding_value=self.tokenizer.pad_token_id, batch_first=True).to('cuda')
-        input_ids.requires_grad = False
+        # input_ids.requires_grad = False
 
         # get label_tensors
         # tensors = []
         # for feature in features_new['labels']:
         #     tensors.append(torch.Tensor(feature).int())
         # label_tensors = pad_sequence(tensors, padding_value=self.tokenizer.pad_token_id).to('cuda')
+        ipdb.set_trace()
         padded_features = {
             'input_ids': input_ids,
-            'labels': input_ids.clone()
+            'labels': input_ids.float()
         }
         return padded_features
 
