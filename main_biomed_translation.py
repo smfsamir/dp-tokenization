@@ -103,9 +103,15 @@ def get_tokenizer(default_tokenizer, mapping_algorithm):
 
 class ShortcutDataCollatorForSeq2Seq(DataCollatorForLanguageModeling):
 
-    def __call__(self, features, return_tensors=None):
+    def __call__(self, features: List[Dict[str, List[int]]], return_tensors=None):
         # right now, we have List[Dict[str, List[int]].
+        # [ {'input_ids': [1,2,3], 'labels': [1,2,3]}, {'input_ids': [1,2,3], 'labels': [1,2,3]}
         # We need to convert this to a Dict[str, List[List[int]]]
+        # {
+        #     'input_ids': [[1,2,3], [1,2,3]],,
+        #     'labels': [[1,2,3], [1,2,3]]
+        #}
+        
         # features = {k: [f[k] for f in features] for k in features[0]}
         # write the comprehension as a nested loop
         features_new = {}
@@ -197,7 +203,7 @@ def step_train_model(
     translation_df = pd.DataFrame({
         "source": sources,
         "target": targets,
-    })
+    }).sample(100)
     translation_dataset = Dataset.from_pandas(translation_df)
     translation_dataset = translation_dataset.map(apply_tokenizer)
     model = AutoModelForCausalLM.from_pretrained(model_name, cache_dir=HF_CACHE_DIR).to('cuda')
