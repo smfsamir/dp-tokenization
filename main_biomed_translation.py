@@ -224,8 +224,8 @@ def step_train_model(
     trainer = transformers.Trainer(
         model=model,
         args=training_args,
-        train_dataset=translation_dataset,
-        eval_dataset=translation_dataset,
+        train_dataset=translation_dataset[:90],
+        eval_dataset=translation_dataset[90:100],
         #tokenizer=tokenizer, #TODO: what interface does tokenizer need to implement?
         data_collator=data_collator,
         compute_metrics=_compute_metrics
