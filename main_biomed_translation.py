@@ -203,7 +203,7 @@ def step_train_model(
     translation_df = pd.DataFrame({
         "source": sources,
         "target": targets,
-    }).sample(100)
+    }).sample(n=100)
     translation_dataset = Dataset.from_pandas(translation_df)
     translation_dataset = translation_dataset.map(apply_tokenizer)
     model = AutoModelForCausalLM.from_pretrained(model_name, cache_dir=HF_CACHE_DIR).to('cuda')
