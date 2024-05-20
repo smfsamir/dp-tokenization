@@ -204,6 +204,7 @@ def step_train_model(
         "source": sources,
         "target": targets,
     }).sample(n=100)
+    ipdb.set_trace()
     translation_dataset = Dataset.from_pandas(translation_df)
     translation_dataset = translation_dataset.map(apply_tokenizer)
     model = AutoModelForCausalLM.from_pretrained(model_name, cache_dir=HF_CACHE_DIR).to('cuda')
