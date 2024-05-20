@@ -156,8 +156,7 @@ def step_train_model(
         print(preds[:2],labels[:2])
         if isinstance(preds, tuple):
             preds = preds[0]
-        preds = np.where(preds != -100, preds, default_tokenizer.pad_token_id)
-        ipdb.set_trace()
+        preds = np.where(preds != -100, preds, default_tokenizer.pad_token_id).argmax(-1)
         decoded_preds = default_tokenizer.batch_decode(preds, skip_special_tokens=True)
         print(decoded_preds[:2])
 
