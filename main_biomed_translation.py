@@ -193,6 +193,7 @@ def step_train_model(
     sources = []
     targets = []
 
+    count = 0
     for base_filename in tqdm(filenames):
         sample_txt_srcname = base_filename + f"_{SRC_LANG}.txt"
         sample_txt_tgtname = base_filename + f"_{TGT_LANG}.txt"
@@ -200,11 +201,13 @@ def step_train_model(
             sources.append(f.read().strip())
         with open(f"{dataset_path}/{sample_txt_tgtname}") as f:
             targets.append(f.read().strip())
+        count += 1
+        if count == 100:
+            break
     translation_df = pd.DataFrame({
         "source": sources,
         "target": targets,
-    }).sample(n=100)
-    ipdb.set_trace()
+    })
     translation_dataset = Dataset.from_pandas(translation_df)
     translation_dataset = translation_dataset.map(apply_tokenizer)
     model = AutoModelForCausalLM.from_pretrained(model_name, cache_dir=HF_CACHE_DIR).to('cuda')
