@@ -258,7 +258,7 @@ if __name__ == '__main__':
             'model_name': 'bigscience/bloomz-560m',
             'dataset_path': f"{WMT_SAVE_DIR}",
             'language_pair': 'en-de',
-            'mapping_algorithm': 'default',
+            'mapping_algorithm': 'dp',
             'output_dir': SCRATCH_DIR,
             'version': '001',
         }
