@@ -214,7 +214,7 @@ def step_train_model(
         num_train_epochs=10,
         dataloader_pin_memory=False
         # predict_with_generate=True,
-        # generation_max_length=128,
+        generation_max_length=128
     )
     data_collator = ShortcutDataCollatorForSeq2Seq(
         default_tokenizer, mlm=False
