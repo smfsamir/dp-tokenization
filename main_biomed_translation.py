@@ -104,37 +104,21 @@ def get_tokenizer(default_tokenizer, mapping_algorithm):
 class ShortcutDataCollatorForSeq2Seq(DataCollatorForLanguageModeling):
 
     def __call__(self, features: List[Dict[str, List[int]]], return_tensors=None):
-        # right now, we have List[Dict[str, List[int]].
-        # [ {'input_ids': [1,2,3], 'labels': [1,2,3]}, {'input_ids': [1,2,3], 'labels': [1,2,3]}
-        # We need to convert this to a Dict[str, List[List[int]]]
-        # {
-        #     'input_ids': [[1,2,3], [1,2,3]],,
-        #     'labels': [[1,2,3], [1,2,3]]
-        #}
-        
-        # features = {k: [f[k] for f in features] for k in features[0]}
-        # write the comprehension as a nested loop
-        features_new = {}
-        for k in features[0]:
-            # features[k] = [f[k] for f in features]
-            features_new[k] = []
-            for f in features:
-                features_new[k].append(f[k])
-        tensors = []
-        for feature in features_new['input_ids']:
-            tensors.append(torch.Tensor(feature).int())
-        feature_tensors = pad_sequence(tensors, padding_value=self.tokenizer.pad_token_id).to('cuda')
-        ipdb.set_trace()
+
+        input_ids = []
+        for datapoint in features:
+            input_ids.append(torch.Tensor(datapoint['input_ids'] + datapoint['labels']).int())
+        input_ids = pad_sequence(input_ids, padding_value=self.tokenizer.pad_token_id, batch_first=True).to('cuda')
 
         # get label_tensors
         # tensors = []
         # for feature in features_new['labels']:
         #     tensors.append(torch.Tensor(feature).int())
         # label_tensors = pad_sequence(tensors, padding_value=self.tokenizer.pad_token_id).to('cuda')
-        # padded_features = {
-        #     'input_ids': feature_tensors,
-        #     'labels': label_tensors
-        # }
+        padded_features = {
+            'input_ids': input_ids,
+            'labels': input_ids.clone()
+        }
         return padded_features
 
 def step_train_model(
