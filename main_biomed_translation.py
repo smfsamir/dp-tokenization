@@ -212,7 +212,7 @@ def step_train_model(
         per_device_eval_batch_size=1,
         save_total_limit=3,
         num_train_epochs=10,
-        dataloader_pin_memory=False
+        dataloader_pin_memory=False,
         # predict_with_generate=True,
         generation_max_length=128
     )
