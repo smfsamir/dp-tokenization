@@ -220,6 +220,7 @@ def step_train_model(
     data_collator = ShortcutDataCollatorForSeq2Seq(
         default_tokenizer, mlm=False
     )
+    ipdb.set_trace()
     trainer = transformers.Trainer(
         model=model,
         args=training_args,
